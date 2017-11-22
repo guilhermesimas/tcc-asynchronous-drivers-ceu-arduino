@@ -1,0 +1,17 @@
+[0] Config.pm:340> INFO - This is Biber 2.4
+[0] Config.pm:343> INFO - Logfile is 'report.blg'
+[40] biber:287> INFO - === Qua Nov 22, 2017, 01:20:39
+[134] Biber.pm:348> INFO - Reading 'report.bcf'
+[276] Biber.pm:742> INFO - Found 9 citekeys in bib section 0
+[283] Biber.pm:3151> INFO - Processing section 0
+[315] Biber.pm:3308> INFO - Looking for bibtex format file 'report.bib' for section 0
+[328] bibtex.pm:1113> INFO - Decoding LaTeX character macros into UTF-8
+[341] bibtex.pm:974> INFO - Found BibTeX data source 'report.bib'
+[421] Utils.pm:147> WARN - The field 'pages' in entry 'singh2014' cannot be null, deleting it
+[485] UCollate.pm:65> INFO - Overriding locale 'en-US' defaults 'normalization = NFD' with 'normalization = prenormalized'
+[485] UCollate.pm:65> INFO - Overriding locale 'en-US' defaults 'variable = shifted' with 'variable = non-ignorable'
+[485] Biber.pm:3028> INFO - Sorting list 'none/global' of type 'entry' with scheme 'none' and locale 'en-US'
+[485] Biber.pm:3032> INFO - No sort tailoring available for locale 'en-US'
+[493] bbl.pm:519> INFO - Writing 'report.bbl' with encoding 'UTF-8'
+[521] bbl.pm:615> INFO - Output to report.bbl
+[521] Biber.pm:109> INFO - WARNINGS: 1
