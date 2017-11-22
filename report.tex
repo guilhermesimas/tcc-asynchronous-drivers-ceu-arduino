@@ -14,6 +14,7 @@
 \usepackage[backend=biber,style=ieee]{biblatex}
 \usepackage{caption}
 \usepackage{subcaption}
+\usepackage[brazilian]{babel}
 
 \lstset{language=C}
 
@@ -316,33 +317,215 @@ projeto está em uma versão 0.20 e conta com exemplos básicos de aplicações 
 em Céu, a linguagem é de fácil integração com C, sendo possível utilizar os módulos desenvolvidos
 atualmente para Arduino. \cite{githubceuarduino}
 
-\section{Results}
-\tab Progress on each item in the previous section's list will now be presented below.
-\subsection{Study current implementation of modules in Arduino which freeze the application}
-\tab The Arduino programming model us structured, serial code. Fuctionalities are associated to function calls, and it is expected that after the code is past that line of code, that functionality has completed what is expected of it. For that reason, all functionalities that envolve hardware support freeze while waiting for the hardware to complete its work.
-\par Having said that, that are functionalities and modules which make use of interrupts, for example Serial communication interfaces. The modules usually have a sort of \textbf{begin()} call, which initializes the routines. Calls to \textbf{read()} and \textbf{write()} functions still freeze the application though, as they must still wait for the hardware.
-\par Since all modules freeze and can be improved upon, a selection will be made based on which modules are most relevant for general applications.
-\subsection{Deepen into Ceu's current implementation of drivers and libraries}
-\tab Drivers and libraries in Ceu-Arduino are implemented using a combination of functions developed in C which are wrapped in Ceu, due to its simple C integration, and ones fully developed in Ceu. The module \textbf{timer.ceu} for example, contains more C implementation than Ceu. On the other hand the module \textbf{usart.ceu} presents more Ceu code.
-\subsection{Deliver a document with proposed modules for which to develop interrupt-based drivers and libraries.}
-\tab These are the chosen modules for reimplementation. They were chosen based on their utility and frequent use for general embedded systems applications. The goal is to be able to develop a robust application fully implemented using Ceu-Arduino and with no computational and energy waste due to polling.
-\subsubsection{Analog I/O}
-\tab The current implementation for the Analog functions for Arduino, such as analogRead(), cause the application to freeze due to polling the hardware register bits which signal the end of the conversion. The Analog To Digital Conversion hardware supports interrupts and therefore, this is a viable choice as interrupts can be used to signal the end of the conversion and avoid polling.
-\subsubsection{SPI}
-\tab Wired communication protocols such as I2C and SPI are often used in embedded systems as they enable the use of external components. The current wired data transfer implementation of such protocols in Arduino is done using interrupt service routines for data buffering but the operations still freeze to maintain synchorism in the application (it is expected that a read is through and done after a call to analogRead(), for example, since the code is structured sequentially).
-\par The candidates for this section were I2C and SPI. When it came to deciding between both, SPI was chosen over I2C because the latter's advantadge is that it uses less lines and does a better job when supporting multiple masters and multiple slaves, while the former is faster and simpler. Since in most applications these protocols are used for communication over a microcontroller and an external component, there is rarely need for multiple masters. 
-\par This decision is also supported by the fact that most external components on the market (more especifically wireless communication modules) use the SPI protocol.
-\subsubsection{Serial}
-\tab For similar reasons to the previous section (SPI), the Serial communication module currently implemented in Arduino blocks the application. Since the Serial communication is an integral part of many embedded systems applications, this is a module which will be of utility for the community.
-\subsubsection{External RTC}
-\tab An external RTC can enable the microcontroler to go into a deeper state of sleep and therefore, save power. Developing a module which supports such a component will be a feat for this project in terms of energy-saving, as the amount of idle time gained from all the reimplementations can be better taken advantadge of by entering a deeper state of sleep.
-\subsubsection{EEPROM}
-\tab The Arduino hardware offers support to EEPROM operations. The EEPROM can be interpreted here as a small hard-disk inside the microcontroller. As such, information is preserved across resets. Being able to store information in such a manner opens the window to many interesting applications. 
-\par Support to these memory operations to the microcontrollers EEPROM save cycles because memory access is slower than most operations. Fortunately, the hardware for EEPROM interface supports interrupts and therefore offers a viable implementation path. This is predicted to be the hardest module subject for implementation because there are, inherently, many challenges in dealing with memory (such as concurrent access to data and memory coherence).
+\section{Proposta e Objetivos do Trabalho}
+\tab O projeto tem como objetivo implementar no ambiente Céu-Arduino bibliotecas e drivers que
+sirvam como alternativa aos bloqueantes utilizados atualmente. Módulos atuais serão estudados de
+forma a definir-se quais serão reimplementados, com foco na pertinência de tais funcionalidades para
+aplicações em sistemas embarcados, mais especificamente nas áreas de sistemas distribuído e redes
+de sensores e atuadores. Bibliotecas de Arduino de protocolos de comunicação, como Wire, e de
+leitura de valores analógicos, como Analog I/O, seriam exemplos de módulos cuja reimplementação
+atenderia o requisito de pertinência mencionado.
+\par A abordagem escolhida para implementação será modelar as funções de forma que a aplicação não
+bloqueie e sim aguarde a emissão de um evento que marca a mudança de estado do hardware pelas
+flags, disparando a interrupção e executando a rotina associada ao estado do hardware dentro da
+execução da funcionalidade.
+\par Os módulos serão desenvolvidos com o objetivo de serem uma contribuição para o projeto Céu-
+Arduino e a comunidade de sistemas embarcados. Por esse motivo, sua implementação será dada
+com o acompanhamento do gestor do projeto Céu-Arduino, de modo a respeitar os padrões
+desejados e previstos.
+\par Espera-se que durante o processo de desenvolvimento seja estabelecido um framework reproduzível
+para implementação de bibliotecas e drivers em Céu-Arduino, e que tal possa ser utilizado para
+facilitar o trabalho de futuros desenvolvedores. O processo será documentado com esse objetivo em
+mente.
+\par Uma aplicação em Sistemas Distribuídos será feita, por fim, de modo a servir como objeto de teste e
+estudo das bibliotecas e drivers implementados. Espera-se que os dados coletados mostrem
+claramente as vantagens da utilização de versões não-bloqueantes dos módulos. Embora ainda não
+tenha seu escopo definido por completo, a aplicação envolverá uma rede de sensores e atuadores, de
+modo a demonstrar os módulos implementados de interface com sensores e atuadores, como o Wire
+para dispositivos I2C e Analog I/O para sensores e atuadores analógicos. Os componentes irão
+utilizar protocolos de troca de mensagens para transmitirem informação e se sincronizarem. O uso
+das novas chamadas não-bloqueantes permitirá à aplicação melhor realizar seus ciclos
+computacionais para realizar essas tarefas, já que os ciclos antes gastos com polling dos drivers de
+sensores e atuadores será utilizado para processamento dos dados e mensagens.
+\par Como os exemplos dados na introdução (sistema de iluminação inteligente; sistema de irrigação
+monitorada; um controlador de tráfego), busca-se uma estrutura onde existem unidades distribuídas
+pelo ambiente responsáveis por coleta de informação e / ou realização de ações, trocando
+informação e se sincronizando por troca de mensagens. Essa é uma boa estrutura para exemplificar
+os módulos desenvolvidos pois os sensores e atuadores justificarão o uso das novas interfaces não
+bloqueantes, liberando a aplicação para processar os dados coletados e trocar mensagens com
+eficiência de modo a manter a sincronização e estabilidade do sistema a um menor consumo de
+energia.
+\section{Atividades Realizadas}
+\tab Como primeira etapa do projeto foram definidos os módulos para os quais implementações não-
+bloqueantes em Céu serão desenvolvidas. Os módulos são Entrada e Saída Analógica (Analog
+I/O), Comunicação SPI (SPI), Comunicação Serial (Serial), Suporte a RTC Externo
+(External RTC) e Operações na EEPROM (EEPROM). Os módulos foram descritos na ordem
+estimada de dificuldade crescente.
+\par O realizado dentro desta primeira etapa do projeto girou em torno do desenvolvimento de um dos
+módulos. Para que o driver fosse implementado, foi necessário um estudo não só da plataforma
+Arduino e do microcontrolador, mas também do ambiente de desenvolvimento disponibilizado pela
+AVR e das bibliotecas já implementadas e disponibilizadas em Céu, principalmente as de Céu-
+Arduino.
+\par Todo o código desenvolvido neste projeto segue a intenção de priorizar simplicidade e rapidez na
+execução, respeitando os requisitos de um módulo suficientemente robusto e funcional. De tal
+modo, os drivers desenvolvidos atenderão somente a plataforma Arduino Uno, por ser a mais
+utilizada e disponível, além de possuírem limitações que podem vir a exigir atenção e
+responsabilidade do usuário final no uso dos drivers em aplicações. O motivo é a busca por uma
+melhor utilização do tempo do projeto e redução da carga computacional para a execução dos drivers.
+\par Ao final desta etapa, o projeto se encontra com um driver já desenvolvido e em uma versão estável.
+Tal módulo servirá como base para que o processo de desenvolvimento possa ser reproduzido para
+os demais drivers. A explicação de cada etapa nesta sessão do relatório virá acompanhada do exemplo
+prático da implementação referente ao módulo. Deste modo, o processo será descrito assim como o
+desenvolvimento do driver.
+\par O módulo desenvolvido nesta primeira etapa do projeto é o de leitura e emissão de valores de
+voltagem analógicos. A referência para este módulo no texto daqui em diante será “Analog I/O”,
+significando “Entrada e Saída Analógica”.
 
-\section{Conclusion and steps forward}
-\tab The project is progressing inside what is expected and, therefore, no changes to the proposal are needed. Implementation of the modules will follow a process of studying the current implementation; understanding the blocking process and motives behind it; proposing a solution; implementing the new module in C; implementing the module in Ceu-Arduino; and finally, developing a sample application.
+\subsection{Estudo do Ambiente de Desenvolvimento C}
 
-\printbibliography[title=Referências]
+\tab O ambiente de desenvolvimento que usa a linguagem C é o mesmo tanto para Arduino quanto para
+Céu-Arduino. Isto é, ambos os códigos são em alguma etapa compilados utilizando o mesmo
+compilador. Esse compilador é disponibilizado pela AVR e é uma versão customizada de GCC,
+chamada de AVR-GCC. Em conjunto com o compilador, são utilizadas bibliotecas da AVR que
+tratam da abstração do hardware, como acesso a registradores, para variados chips da Atmel, incluindo
+o AtMega328p, presente no Arduino Uno, plataforma para qual os módulos deste projeto são
+destinados.
+\par Outra ferramenta essencial para o andamento do projeto é a capacidade de se registrar rotinas de
+serviço a interrupções (Interrupt Service Routines, ISR), que são rotinas de código associadas a
+interrupções do microcontrolador. Em outras palavras, quando o hardware emite uma interrupção, osoftware executaria a ISR atrelada àquela interrupção. AVR disponibiliza uma biblioteca de tratamento
+de interrupções que torna simples a implementação de tais ISRs.
+\par Para Analog I/O, isso significa que teremos fácil acesso a quaisquer registradores atrelados ao
+módulo, e o acesso ao hardware ficará transparente para o desenvolvedor, que irá tratar os
+registradores como vetores de bits. Como será mencionado posteriormente, isso procede tanto para
+o ambiente de desenvolvimento C quanto o ambiente Céu.
+
+\subsection{Estudo do Hardware}
+
+\tab AVR disponibiliza um documento detalhado [5] das especificações do microcontrolador presente no
+Arduino Uno, o AtMega328p. Esse documento, chamado datasheet, possui a definição de todas as
+funcionalidades e hardwares dedicados presentes, incluindo a definição e descrição dos registradores
+responsáveis e atrelados a cada um. Esse documento é vital para o entendimento das capacidades e
+limitações do chip e, principalmente, o de como operá-lo.
+\par A datasheet está no centro da primeira etapa do desenvolvimento, que é estudar o funcionamento do
+hardware para que, em conjunto com o estudo do código da implementação atual (se existente), seja
+possível compreender o comportamento de uma API tradicional. O foco desse passo é criar uma
+base de conhecimento sobre as informações já disponíveis acerca do módulo.
+\par Durante essa etapa no desenvolvimento do Analog I/O, foi levantado que as funcionalidades de
+entrada (leitura de valor analógico) e saída (emissão de valor analógico) são atreladas a hardwares
+dedicados distintos no microcontrolador. Enquanto os valores de saída analógicos são simulados
+utilizando ondas PWM (o pino liga e desliga em intervalos regulares, onde o valor analógico seria a
+razão entre o tempo que permanece ligado e o tempo que permanece desligado). Essa funcionalidade
+já se encontra implementada em Céu e, portanto, não é pertinente para os efeitos deste relatório.
+\par Os valores de leitura, em outra mão, são obtidos por um hardware de Conversão Analógica para
+Digital (ADC). Esse componente dedicado recebe um valor de voltagem analógico e, após ciclos de
+processamento, guarda em seus registradores a representação de 10 bits deste valor, quando
+comparado a uma referência de valor máximo. Em outras palavras, se a voltagem de entrada for o
+ground, o resultado será “0”. Caso seja igual ou acima da voltagem de referência, será 1023.
+\par Embora existam mais de um pino de leitura analógico no microcontrolador, existe somente um
+hardware de ADC. Para que possa atender a todos os seis pinos, o hardware conta com um
+multiplexador que seleciona o pino para qual a leitura deve ser feita. Repare que não é possível ter
+mais de um pino tendo seu valor lido pelo hardware ao mesmo tempo. O valor desse multiplexador se
+encontra em um dos registradores ao qual o desenvolvedor possui acesso e, portanto, seu valor pode
+ser modificado facilmente. Além do multiplexador, o usuário possui acesso a vários valores que
+servem como configuração do ADC. Dentre esses valores, o de Analog to Digital Interrupt
+Enable (ADIE) é de elevado interesse ao projeto, já que quando este bit, presente no registrador de
+configuração ADCSRA, se encontra “setado” (valor lógico 1), o hardware dispara uma interrupção
+toda vez que uma conversão termina.
+\par Em resumo, para efetuar uma conversão, o multiplexador, cujo valor é controlado pelo registrador
+ADMUX, deve receber o valor do pino para qual a leitura será feita. Do mesmo modo, os outros
+bits de configuração devem ser setados de acordo com a configuração desejada pelo usuário. Para
+iniciar a conversão, basta que o software escreva o valor lógico 1 no bit ADSC. Esse bit terá seu valor
+1 mantido pelo hardware enquanto a conversão está em progresso, e será zerado no momento que a
+conversão tiver fim e o resultado estiver disponível. Os nomes técnicos dos bits e registradores serão
+referenciados no texto quando descrevendo a implementação.
+
+\subsection{Implementação Original}
+
+\tab A implementação atual de uma função de leitura analógica, presente na biblioteca de funções
+disponibilizada pela Arduino, possui como único argumento o pino para qual a conversão deve ser
+feita, devolvendo o resultado da mesma.
+\par A função configura os registradores do hardware, incluindo ADMUX, cujo valor terá como base o
+argumento de entrada da função. Em seguida, inicia a conversão escrevendo o lógico 1 em ADSC.
+Para aguardar o fim da conversão, o código faz polling em ADSC. Como já discutido, isso caracteriza
+o motivo da aplicação apresentar um comportamento bloqueante, e é o que o projeto visa eliminar.
+Após ADSC ter sido zerado pelo hardware, a função segue sua execução e retorna o valor do
+resultado.
+\subsection{Implementação Mínima Viável}
+\tab Após a funcionalidade ter sido estudada do ponto de vista do hardware e do software (caso este seja
+disponível), a causa do comportamento bloqueante da aplicação deverá ter sido identificada e uma
+solução idealizada. Essa solução pode ter como base a capacidade do hardware de gerar interrupções
+ou quaisquer outros métodos para que não seja necessário à aplicação consultar o hardware, e sim
+cadastrar um call-back para que o modelo de Céu funcione.
+\par Com base na solução, deverá ser implementada uma API na linguagem de escolha. No âmbito deste
+projeto, essa linguagem será C. Embora possa não se assemelhar com a implementação final, essa
+solução intermediária deve apresentar contribuições claras ao código final, mesmo que na forma de
+aprendizado.
+\par A implementação em C do driver para gerenciar o ADC buscou eliminar o polling encontrado (descrito
+na última sessão) utilizando a capacidade do módulo de emitir uma interrupção quando a conversão
+for concluída e o registro de uma ISR atrelada a essa interrupção utilizando as utilidades
+disponibilizadas pela AVR.
+\par A implementação nova reaproveita a implementação original, modificando a lógica do polling.
+Enquanto a original possuía apenas uma função que encapsulava todo o processo de leitura, desde a
+configuração do hardware dedicado até o retorno do valor, a API nova é dividida em três funções, que
+contam com o suporte de uma ISR atrelada à interrupção do ADC e uma variável global que guarda
+o estado de uma conversão.
+\par A primeira função é equivalente à função de leitura da implementação original até o momento do
+início da conversão, isto é, ela termina quando ADSC recebe o valor lógico 1. Entretanto ela
+configura ADIE para que as interrupções ocorram, algo que não estava previsto na implementação
+da Arduino. Essa função altera o valor da variável de estado para que esta reflita que uma conversão
+está em andamento.
+\par A segunda função é utilizada para consultar a variável de estado de modo a saber se uma conversão
+está acontecendo. Isso é necessário pois caso esteja, os valores contidos nos registradores que
+guardam o resultado da conversão podem não ser verdadeiros.
+\par A terceira função é equivalente à parte final da função da implementação original, após o polling. Ela
+simplesmente retorna o resultado da conversão contido nos registradores.
+\par A ISR atrelada à interrupção do ADC altera o valor da variável de estado para refletir que uma
+interrupção terminou.
+\par Para efetuar uma leitura de um valor analógico utilizando esta API, o usuário deve chamar a primeira
+função para iniciar a conversão e, depois que a segunda função retorne um valor negativo
+(representando que uma conversão não está em progresso), chamar a terceira função para obter o
+resultado.
+
+\subsection{Estudo do Ambiente de Desenvolvimento Céu}
+
+\tab A linguagem Céu permite uma forte integração com C, sendo capaz de chamar funções e acessar
+variáveis declaradas e contidas no contexto C. Isso permite que parte da implementação mínima
+viável seja reutilizado no desenvolvimento da versão da API em Céu. O ambiente também permite a
+declaração de ISRs, o que torna possível reproduzir a API em C dentro do ambiente Céu desde o
+primeiro momento.
+\par A vantagem de Céu é a modelagem orientada a eventos, o que permite que a API execute baseada
+em call-backs, contribuindo para a eliminação do desperdício dos ciclos (que eram utilizados para
+checar se a API e encontrava em um estado que permitia a próxima ação). Este passo no
+desenvolvimento deve ser utilizado para modelar a solução concebida nos passos anteriores de forma
+que utilize as vantagens de Céu a favor da economia de ciclos, implementando a estrutura de
+orientação a eventos prevista no modelo Céu.
+\par Nesta etapa do desenvolvimento do módulo ADC, a obtenção do resultado da conversão foi
+modelada como um evento emitido pelo driver. Deste modo, a API consiste na requisição de uma
+conversão por parte da aplicação e da emissão, por parte da API, de um evento que carrega o
+resultado.
+
+\subsection{Implementação em Céu}
+
+\tab Após ter a API modelada em Céu, o desenvolvedor possuiu todas as ferramentas para produzir a
+solução final. Deve-se buscar tirar o máximo de proveito possível do trabalho realizado nas etapas
+anteriores.
+\par A implementação em Céu do módulo ADC constituiu ter uma função que iniciava uma conversão,
+função esta que foi reaproveitada da API em C. Como a própria API será responsável por emitir o
+resultado quando a conversão terminar, não há necessidade de manter uma variável de estado. Basta
+que, na ISR, o resultado seja obtido utilizando a função implementada no passo anterior e que este
+valor seja enviado à aplicação na forma de um evento. Todo o controle de estados do driver é
+encapsulado pelo próprio modelo de Céu e o fluxo de execução.
+\par Para efetuar uma conversão, a aplicação, agora em Céu, deve requisitar uma conversão e “aguardar”
+o evento resultado. Como previsto no ambiente Céu, enquanto a aplicação está “aguardando” o
+evento, o microcontrolador fica livre para executar outras linhas de código pendentes ou, caso
+nenhuma exista, entrar em um estado de baixo consumo de energia. Quando o hardware concluir a
+conversão, o evento emitido irá “acordar” a aplicação, que seguirá seu fluxo. No caso da
+implementação original, a aplicação não poderia fazer uso desse tempo de “aguarde” pois estaria
+bloqueada consultando o driver para saber se a conversão já havia terminado. O contraste entre as
+duas aplicações e, por consequência, o contraste entre as duas APIs ficam claros.
+
+\newpage
+
+\printbibliography
 
 \end{document}

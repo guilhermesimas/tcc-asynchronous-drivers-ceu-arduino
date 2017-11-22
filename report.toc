@@ -1,25 +1,23 @@
 \boolfalse {citerequest}\boolfalse {citetracker}\boolfalse {pagetracker}\boolfalse {backtracker}\relax 
 \defcounter {refsection}{0}\relax 
+\select@language {brazilian}
+\defcounter {refsection}{0}\relax 
 \contentsline {section}{\numberline {1}Introdu\IeC {\c c}\IeC {\~a}o}{3}
 \defcounter {refsection}{0}\relax 
 \contentsline {section}{\numberline {2}Estado da Arte}{4}
 \defcounter {refsection}{0}\relax 
-\contentsline {section}{\numberline {3}Results}{5}
+\contentsline {section}{\numberline {3}Proposta e Objetivos do Trabalho}{5}
 \defcounter {refsection}{0}\relax 
-\contentsline {subsection}{\numberline {3.1}Study current implementation of modules in Arduino which freeze the application}{5}
+\contentsline {section}{\numberline {4}Atividades Realizadas}{6}
 \defcounter {refsection}{0}\relax 
-\contentsline {subsection}{\numberline {3.2}Deepen into Ceu's current implementation of drivers and libraries}{5}
+\contentsline {subsection}{\numberline {4.1}Estudo do Ambiente de Desenvolvimento C}{6}
 \defcounter {refsection}{0}\relax 
-\contentsline {subsection}{\numberline {3.3}Deliver a document with proposed modules for which to develop interrupt-based drivers and libraries.}{5}
+\contentsline {subsection}{\numberline {4.2}Estudo do Hardware}{6}
 \defcounter {refsection}{0}\relax 
-\contentsline {subsubsection}{\numberline {3.3.1}Analog I/O}{5}
+\contentsline {subsection}{\numberline {4.3}Implementa\IeC {\c c}\IeC {\~a}o Original}{7}
 \defcounter {refsection}{0}\relax 
-\contentsline {subsubsection}{\numberline {3.3.2}SPI}{6}
+\contentsline {subsection}{\numberline {4.4}Implementa\IeC {\c c}\IeC {\~a}o M\IeC {\'\i }nima Vi\IeC {\'a}vel}{7}
 \defcounter {refsection}{0}\relax 
-\contentsline {subsubsection}{\numberline {3.3.3}Serial}{6}
+\contentsline {subsection}{\numberline {4.5}Estudo do Ambiente de Desenvolvimento C\IeC {\'e}u}{8}
 \defcounter {refsection}{0}\relax 
-\contentsline {subsubsection}{\numberline {3.3.4}External RTC}{6}
-\defcounter {refsection}{0}\relax 
-\contentsline {subsubsection}{\numberline {3.3.5}EEPROM}{6}
-\defcounter {refsection}{0}\relax 
-\contentsline {section}{\numberline {4}Conclusion and steps forward}{6}
+\contentsline {subsection}{\numberline {4.6}Implementa\IeC {\c c}\IeC {\~a}o em C\IeC {\'e}u}{8}
