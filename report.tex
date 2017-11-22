@@ -1,5 +1,6 @@
 \documentclass{article}
 %\usepackage{enumitem}
+\usepackage[table]{xcolor}
 \usepackage{listings}
 \usepackage{amsfonts}
 \usepackage{latexsym}
@@ -15,7 +16,6 @@
 \usepackage{caption}
 \usepackage{subcaption}
 \usepackage[brazilian]{babel}
-
 \lstset{language=C}
 
 \graphicspath{{images/}}
@@ -285,7 +285,7 @@ sua tarefa. Caso não haja nenhuma tarefa a ser realizada, o microcontrolador po
 modo de baixo consumo de energia, portanto sempre há ganhos por utilizar a abordagem não-
 bloqueante.
 
-\begin{figure}[hbp]
+\begin{figure}[!b]
 \centering
 \begin{subfigure}[b]{.5\textwidth}
   \centering
@@ -523,6 +523,82 @@ conversão, o evento emitido irá “acordar” a aplicação, que seguirá seu 
 implementação original, a aplicação não poderia fazer uso desse tempo de “aguarde” pois estaria
 bloqueada consultando o driver para saber se a conversão já havia terminado. O contraste entre as
 duas aplicações e, por consequência, o contraste entre as duas APIs ficam claros.
+
+\section{Revisão do Plano de Ação}
+
+\tab Embora o planejamento original previsse um estudo de todos os módulos antes da implementação,
+foi percebido que tratar cada módulo separadamente é mais vantajoso em termos de aprendizado e
+produtividade, visto que o estudo e modelagem da solução para cada módulo é independente dos
+outros módulos. Além disso, implementar uma API por completo promove experiência que será útil
+no desenvolvimento das soluções seguintes.
+\par Deste modo, embora as etapas previstas anteriormente para todos os módulos permanecem
+pertinentes, elas serão realizadas dentro do âmbito de cada módulo. O novo planejamento e
+cronograma, para evitar redundâncias, será dividido por módulo.
+\par Segue o novo planejamento e explicação breve das etapas e objetivos esperados para o cumprimento
+do projeto:
+\begin{itemize}
+
+\item Definição dos módulos. Serão definidos quais módulos serão implementados em Céu ao
+longo do projeto.
+\item Desenvolver módulo. Para cada um dos cinco módulos propostos:
+\begin{itemize}
+
+\item Aprofundamento no estado da arte. Será estudada a implementação atual de
+biblioteca e driver de Arduino que causam o bloqueio da aplicação. Serão estudadas
+as implementações de bibliotecas e drivers em Céu, de modo a melhor conhecer o
+padrão proposto pela linguagem.
+\item Estudo do hardware. Análise baixo-nível das consequências do código em C da
+plataforma Arduino de modo a entender como o microcontrolador reage, utilizando
+datasheet como referência.
+\item Elaborar alternativas e soluções. Planos de ação para uma implementação não-
+bloqueante.
+\item Implementação dos módulos. Serão desenvolvidos o driver e biblioteca, em conjunto
+com aplicação que exemplifique suas funcionalidades.
+\item Documentação dos módulos. O módulo desenvolvido sofrerá quaisquer ajustes
+necessários para que siga o padrão previsto em Céu-Arduino e esteja considerado
+pronto para uso. Toda modificação ao módulo a partir deste ponto deve ser mínima
+visto que a etapa de desenvolvimento do mesmo deve ser dada como completa.
+
+\end{itemize}
+
+\item Definição do escopo da aplicação. A aplicação deve ser capaz de demonstrar as vantagens da
+reimplementação de cada módulo desenvolvido. A aplicação envolverá comunicação entre
+módulos independentes a fim de sincronização como esperado de uma aplicação de sistemas
+distribuídos.
+\item Desenvolvimento da aplicação. Deve ser desenvolvida e modelada de modo que seja viável a
+coleta de dados.
+\item Análise dos dados e relatório. Com base na análise dos dados será feito um relatório
+demonstrando as vantagens e proponho melhorias para os módulos desenvolvidos.
+
+\end{itemize}
+
+\section{Cronograma}
+
+\begin{center}
+\begin{tabular}{|c|c|c|c|c|c|c|c|c|}
+\hline
+&Mês 1&Mês 2&Mês 3&Mês 4&Mês 5&Mês 6&Mês 7&Mês 8 \\
+\hline
+Definição dos módulos & \cellcolor[HTML]{808080} &&&&&&& \\
+\hline
+Desenvolver módulo Analog I/O & \cellcolor[HTML]{808080} & \cellcolor[HTML]{808080} &&&&&& \\
+\hline
+Desenvolver módulo SPI && \cellcolor[HTML]{808080} & \cellcolor[HTML]{808080} &&&&& \\
+\hline
+Desenvolver módulo Serial &&& \cellcolor[HTML]{808080} & \cellcolor[HTML]{808080} &&&& \\
+\hline
+Desenvolver módulo External RTC &&&& \cellcolor[HTML]{808080} & \cellcolor[HTML]{808080} &&& \\
+\hline
+Desenvolver módulo EEPROM &&&&& \cellcolor[HTML]{808080} & \cellcolor[HTML]{808080} && \\
+\hline
+Definir escopo da aplicação &&&&&& \cellcolor[HTML]{808080} && \\
+\hline
+Desenvolver a aplicação &&&&&&& \cellcolor[HTML]{808080} & \cellcolor[HTML]{808080}  \\
+\hline
+Análisar dados e produzir relatório &&&&&&&& \cellcolor[HTML]{808080}  \\
+\hline
+\end{tabular}
+\end{center}
 
 \newpage
 

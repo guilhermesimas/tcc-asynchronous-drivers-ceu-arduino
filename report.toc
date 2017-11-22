@@ -21,3 +21,7 @@
 \contentsline {subsection}{\numberline {4.5}Estudo do Ambiente de Desenvolvimento C\IeC {\'e}u}{8}
 \defcounter {refsection}{0}\relax 
 \contentsline {subsection}{\numberline {4.6}Implementa\IeC {\c c}\IeC {\~a}o em C\IeC {\'e}u}{8}
+\defcounter {refsection}{0}\relax 
+\contentsline {section}{\numberline {5}Revis\IeC {\~a}o do Plano de A\IeC {\c c}\IeC {\~a}o}{9}
+\defcounter {refsection}{0}\relax 
+\contentsline {section}{\numberline {6}Cronograma}{9}
