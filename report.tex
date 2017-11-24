@@ -205,11 +205,8 @@ Ana \textsc{Lúcia de Moura} % Supervisor's Name
 promovidos por empresas de tecnologia da informação, mostrando que o conceito pode ser
 implementado e, embora não tenha uma presença evidente no dia-a-dia, está em constante
 desenvolvimento e em processo de adequação. Existem várias definições do termo “Internet das
-Coisas”, porém a grande maioria delas compartilha a opinião de que a conexão e troca de dados
-entre elementos é parte vital do conceito. Por esse motivo, a área de Sistemas Distribuídos possui um
-papel importantíssimo nesse desenvolvimento, já que toda aplicação deve ser capaz de trocar
-mensagens e informação segura e corretamente de forma a se sincronizar, e de forma escalável. \cite{singh2014}
-Outro ponto sobre a escalabilidade de aplicações em Internet das Coisas é a necessidade de unidades
+Coisas”, porém a grande maioria delas compartilha o foco em aplicações escaláveis que envolvem a cooperação entre múltiplas partes em busca do objetivo em comum.  \cite{singh2014}
+Para viabilizar a escabilidade prevista nas aplicações em Internet das Coisas, são necessárias unidades
 computacionais de custo baixo e consumo eficiente de energia. Por esse motivo microcontroladores
 são outra parte vital do desenvolvimento de soluções, apresentando, entre outras vantagens, uma
 facilidade na programação devido a bibliotecas e drivers já implementados e disponibilizados.
@@ -229,37 +226,14 @@ sistemas nos quais o tempo de processamento ou reação a estímulos externos é
 funcionamento da aplicação. O paradigma de programação orientada a eventos é muitas vezes
 utilizado como abordagem nessas situações. Em uma aplicação orientada a eventos, o sistema segue
 seu fluxo normal até a chegada de um “evento”, como a chegada de uma mensagem, ou a conclusão
-de um trabalho por parte do hardware. A chegada de tal evento emite uma interrupção no sistema, que
-irá executar uma rotina de tratamento desse evento, e após terminado, irá retomar seu fluxo normal
-de execução, a partir de onde estava no momento da interrupção. Esse paradigma busca evitar que
-quaisquer estímulos sejam ignorados involuntariamente pela aplicação ou que ciclos computacionais
-sejam desperdiçados. Essa estruturação introduz uma espécie de paralelismo e imprevisibilidade no
-fluxo de execução da aplicação, algo que linguagens comumente utilizadas para programação de
-sistemas embarcados, como C, não fazem um bom papel de representar, por serem historicamente
-procedurais (espera-se que o fluxo de execução siga naturalmente a ordem de leitura do código, a
-linha de baixo imediatamente seguindo a execução da linha de cima).
-\par Dentre um número enorme de microcontroladores, a plataforma Arduino possui uma comunidade de desenvolvedores e recebe muita atenção, além de ser open-source. Contribuições na forma de
-exemplos de aplicações e desenvolvimento de drivers e bibliotecas são frequentes e são o que tornam
-a comunidade tão bem-sucedida. Por último, a plataforma é de fácil acesso e muitas vezes utilizada
-como parâmetro, devido à sua popularidade. \cite{arduinoblog}
-\par Céu é uma linguagem de programação estruturada síncrona reativa, onde a orientação a eventos é
-inerente à programação, assim como o paralelismo entre seções de código que surgem com esse
-paradigma, como mencionado anteriormente. A linguagem, portanto, faz um ótimo papel de
-implementar a orientação a eventos. Outro benefício de Céu é o fato de que a ordem de execução de
-trechos de programa que estão descritos para rodar em paralelo é previsível dado a chegada de um
-determinado evento. \cite{santanna2012} Devido às vantagens dessas características para a programação de
-componentes de sistemas embarcados, foi desenvolvido um kit de desenvolvimento em Céu para
-uma família de microcontroladores, Arduino, chamada Céu-Arduino.
-\par Céu-Arduino permite a programação de microcontroladores Arduino utilizando a linguagem Céu, o
-que facilita a programação orientada a eventos. Céu-Arduino, porém, não reimplementa os drivers e
-bibliotecas desenvolvidos para Arduino em outras linguagens, e, portanto, não pode impedir o
-bloqueio da aplicação que é consequência da chamada de funções bloqueantes pré-desenvolvidas. A
-re-implementação desses módulos eliminaria mais uma possibilidade de bloqueio de uma aplicação
-que as utilize. \cite{githubceuarduino}
-\par Esse trabalho propõe reimplementar drivers e bibliotecas de Arduino, que atualmente causam
+de um trabalho por parte do hardware. Esse paradigma permite estruturar a aplicação de forma a evitar que
+quaisquer estímulos sejam ignorados involuntariamente ou que ciclos computacionais
+sejam desperdiçados. Essa estruturação, porém, introduz uma espécie de paralelismo e imprevisibilidade no
+fluxo de execução da aplicação que é de difícil representação por linguagens utilizadas no meio atualmente.
+\par Esse trabalho propõe reimplementar drivers e bibliotecas do microcontrolador Arduino, que atualmente causam
 bloqueio da aplicação, de forma a que esse bloqueio não ocorra mais. A abordagem utilizada nesse
 desenvolvimento será do uso de interrupções suportadas por hardware especializado com orientação a
-eventos e, por esse motivo, a linguagem escolhida para esse desenvolvimento será Céu-Arduino. Os
+eventos. Com esses fatores em mente, a linguagem escolhida para esse desenvolvimento foi Céu\cite{santanna2012}, uma linguagem reativa orientada a eventos desenvolvida na PUC, em conjunto com um kit da linguagem para desenvolvimento para Arduino, chamado Céu-Arduino\cite{githubceuarduino}. Os
 resultados desse desenvolvimento serão publicados na página open-source de desenvolvimento do
 kit, para que futuros desenvolvedores possam fazer uso de tais módulos em suas próprias aplicações
 e objetivos.
