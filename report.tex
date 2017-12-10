@@ -201,20 +201,19 @@ Ana \textsc{Lúcia de Moura} % Supervisor's Name
 \section{Introdução}	
 
 
-\tab Atualmente existe uma grande variedade de estudos e soluções no âmbito da Internet das Coisas
-promovidos por empresas de tecnologia da informação, mostrando que o conceito pode ser
-implementado e, embora não tenha uma presença evidente no dia-a-dia, está em constante
-desenvolvimento e em processo de adequação. Existem várias definições do termo “Internet das
-Coisas”, porém a grande maioria delas compartilha o foco em aplicações escaláveis que envolvem a cooperação entre múltiplas partes em busca do objetivo em comum.  \cite{singh2014}
-Para viabilizar a escabilidade prevista nas aplicações em Internet das Coisas, são necessárias unidades
+\ab Existem várias definições do termo “Internet das
+Coisas”, porém a grande maioria delas compartilha a opinião de que a conexão e troca de dados
+entre elementos é parte vital do conceito. Por esse motivo, a área de Sistemas Distribuídos possui um
+papel importantíssimo nesse desenvolvimento, já que toda aplicação deve ser capaz de trocar
+mensagens e informação segura e corretamente de forma a se sincronizar, e de forma escalável. \cite{singh2014}
+Outro ponto sobre a escalabilidade de aplicações em Internet das Coisas é a necessidade de unidades
 computacionais de custo baixo e consumo eficiente de energia. Por esse motivo microcontroladores
 são outra parte vital do desenvolvimento de soluções, apresentando, entre outras vantagens, uma
 facilidade na programação devido a bibliotecas e drivers já implementados e disponibilizados.
 Microcontroladores são capazes de processamento de dados por possuírem processadores e de
 serem facilmente integrados com sensores e atuadores, possuindo hardware especializado para
 interfacear com esses componentes.
-\par Muitas APIs (conjuntos de rotinas, protocolos e ferramentas para desenvolvimento de software para
-uma plataforma) fornecidas por microcontroladores incluem rotinas que causam um bloqueio na
+\par Muitas ferramentas de desenvolvimento fornecidos por microcontroladores incluem rotinas que causam um bloqueio na
 aplicação, ou seja, enquanto está realizando a chamada correspondente àquela funcionalidade, o
 software entra em um estado onde realiza tarefas virtualmente inúteis até que o hardware conclua sua
 parte. Esse comportamento é indesejável visto que a aplicação desperdiça tempo aguardando o
@@ -226,29 +225,55 @@ sistemas nos quais o tempo de processamento ou reação a estímulos externos é
 funcionamento da aplicação. O paradigma de programação orientada a eventos é muitas vezes
 utilizado como abordagem nessas situações. Em uma aplicação orientada a eventos, o sistema segue
 seu fluxo normal até a chegada de um “evento”, como a chegada de uma mensagem, ou a conclusão
-de um trabalho por parte do hardware. Esse paradigma permite estruturar a aplicação de forma a evitar que
-quaisquer estímulos sejam ignorados involuntariamente ou que ciclos computacionais
-sejam desperdiçados. Essa estruturação, porém, introduz uma espécie de paralelismo e imprevisibilidade no
-fluxo de execução da aplicação que é de difícil representação por linguagens utilizadas no meio atualmente.
-\par Esse trabalho propõe reimplementar drivers e bibliotecas do microcontrolador Arduino, que atualmente causam
+de um trabalho por parte do hardware. A chegada de tal evento emite uma interrupção no sistema, que
+irá executar uma rotina de tratamento desse evento, e após terminado, irá retomar seu fluxo normal
+de execução, a partir de onde estava no momento da interrupção. Esse paradigma busca evitar que
+quaisquer estímulos sejam ignorados involuntariamente pela aplicação ou que ciclos computacionais
+sejam desperdiçados. Essa estruturação introduz uma espécie de paralelismo e imprevisibilidade no
+fluxo de execução da aplicação, algo que linguagens comumente utilizadas para programação de
+sistemas embarcados, como C, não fazem um bom papel de representar, por serem historicamente
+procedurais (espera-se que o fluxo de execução siga naturalmente a ordem de leitura do código, a
+linha de baixo imediatamente seguindo a execução da linha de cima).
+\par Dentre um número enorme de microcontroladores, a plataforma Arduino possui uma comunidade de desenvolvedores e recebe muita atenção, além de ser open-source. Contribuições na forma de
+exemplos de aplicações e desenvolvimento de drivers e bibliotecas são frequentes e são o que tornam
+a comunidade tão bem-sucedida. Por último, a plataforma é de fácil acesso e muitas vezes utilizada
+como parâmetro, devido à sua popularidade. \cite{arduinoblog}
+\par Céu é uma linguagem de programação estruturada síncrona reativa, onde a orientação a eventos é
+inerente à programação, assim como o paralelismo entre seções de código que surgem com esse
+paradigma, como mencionado anteriormente. A linguagem, portanto, faz um ótimo papel de
+implementar a orientação a eventos. Outro benefício de Céu é o fato de que a ordem de execução de
+trechos de programa que estão descritos para rodar em paralelo é previsível dado a chegada de um
+determinado evento. \cite{santanna2012} Devido às vantagens dessas características para a programação de
+componentes de sistemas embarcados, foi desenvolvido um kit de desenvolvimento em Céu para
+uma família de microcontroladores, Arduino, chamada Céu-Arduino.
+\par Céu-Arduino permite a programação de microcontroladores Arduino utilizando a linguagem Céu, o
+que facilita a programação orientada a eventos. Céu-Arduino, porém, não reimplementa os drivers e
+bibliotecas desenvolvidos para Arduino em outras linguagens, e, portanto, não pode impedir o
+bloqueio da aplicação que é consequência da chamada de funções bloqueantes pré-desenvolvidas. A
+re-implementação desses módulos eliminaria mais uma possibilidade de bloqueio de uma aplicação
+que as utilize. \cite{githubceuarduino}
+\par Esse trabalho propõe reimplementar drivers e bibliotecas de Arduino, que atualmente causam
 bloqueio da aplicação, de forma a que esse bloqueio não ocorra mais. A abordagem utilizada nesse
-desenvolvimento será do uso de interrupções suportadas por hardware especializado com orientação a
-eventos. Com esses fatores em mente, a linguagem escolhida para esse desenvolvimento foi Céu\cite{santanna2012}, uma linguagem reativa orientada a eventos desenvolvida na PUC, em conjunto com um kit da linguagem para desenvolvimento para Arduino, chamado Céu-Arduino\cite{githubceuarduino}. Os
-resultados desse desenvolvimento serão publicados na página open-source de desenvolvimento do
+desenvolvimento foi do uso de interrupções suportadas por hardware especializado com orientação a
+eventos e, por esse motivo, a linguagem escolhida para esse desenvolvimento foi Céu-Arduino. Os
+resultados desse desenvolvimento foram publicados na página open-source de desenvolvimento do
 kit, para que futuros desenvolvedores possam fazer uso de tais módulos em suas próprias aplicações
 e objetivos.
-\par Por fim, será desenvolvida uma aplicação em Sistemas Distribuídos para exemplificar a pertinência
-dos módulos desenvolvidos. A aplicação consistirá em uma rede de sensores e atuadores na
-plataforma Arduino, utilizando troca de mensagens. Alguns exemplos de aplicações que satisfazem
+\par Por fim, foi desenvolvida uma aplicação em Sistemas Distribuídos para exemplificar a pertinência
+dos módulos desenvolvidos. A aplicação consistiu em uma rede de sensores e atuadores na
+plataforma Arduino, utilizando troca de mensagens. Alguns exemplos que satisfazem
 os requisitos e objetivos são: Um sistema de iluminação inteligente; um sistema de irrigação
-monitorada; um controlador de tráfego. Esse trabalho tem como meta servir como uma contribuição
+monitorada; um controlador de tráfego. A aplicação escolhida foi um sistema de iluminação inteligente. Esse trabalho tem como meta servir como uma contribuição
 para a comunidade desenvolvedora de sistemas embarcados e de aplicações de IoT, assim como
 desenvolvedores da plataforma Arduino. \cite{wortmann2015} \cite{chui2010} \cite{edwards1997} \cite{githubceu} \cite{atmegadatasheet}
 
-\section{Estado da Arte}
+\section{Fundamentos}
 
-\tab Bloqueios em chamadas de drivers de microcontroladores são comumente causados por
-implementações que usam polling para checar se a operação foi concluída. Polling é caracterizado
+\tab O desenvolvimento realizado neste projeto tem como base a resolução de desafios enfrentados na comunidade, utilizando ferramentas e ambientes de desenvolvimentos específicos. Para que o trabalho realizado seja compreendido, é necessário primeiro compreender conceitualmente os desafios assim como os princípios das ferramentas utilizadas. Essa sessão busca se aprofundar nestes pontos o suficiente para a compreensão e acompanhamento do projeto. 
+
+\subsection{Bloqueio de Aplicações}
+
+\tab Bloqueios em chamadas de drivers de microcontroladores são comumente causados por implementações que usam polling para checar se a operação foi concluída. Polling é caracterizado
 quando o software constantemente checa um estado, aguardando uma mudança, para só então
 prosseguir. Funcionalidades de hardware especializado em microcontroladores costumam sinalizar sua
 conclusão mudando o estado de um registrador, caracterizando uma flag. Implementações não-
@@ -291,45 +316,22 @@ projeto está em uma versão 0.20 e conta com exemplos básicos de aplicações 
 em Céu, a linguagem é de fácil integração com C, sendo possível utilizar os módulos desenvolvidos
 atualmente para Arduino. \cite{githubceuarduino}
 
-\section{Proposta e Objetivos do Trabalho}
-\tab O projeto tem como objetivo implementar no ambiente Céu-Arduino bibliotecas e drivers que
-sirvam como alternativa aos bloqueantes utilizados atualmente. Módulos atuais serão estudados de
-forma a definir-se quais serão reimplementados, com foco na pertinência de tais funcionalidades para
-aplicações em sistemas embarcados, mais especificamente nas áreas de sistemas distribuído e redes
-de sensores e atuadores. Bibliotecas de Arduino de protocolos de comunicação, como Wire, e de
-leitura de valores analógicos, como Analog I/O, seriam exemplos de módulos cuja reimplementação
-atenderia o requisito de pertinência mencionado.
-\par A abordagem escolhida para implementação será modelar as funções de forma que a aplicação não
-bloqueie e sim aguarde a emissão de um evento que marca a mudança de estado do hardware pelas
-flags, disparando a interrupção e executando a rotina associada ao estado do hardware dentro da
-execução da funcionalidade.
-\par Os módulos serão desenvolvidos com o objetivo de serem uma contribuição para o projeto Céu-
-Arduino e a comunidade de sistemas embarcados. Por esse motivo, sua implementação será dada
-com o acompanhamento do gestor do projeto Céu-Arduino, de modo a respeitar os padrões
-desejados e previstos.
-\par Espera-se que durante o processo de desenvolvimento seja estabelecido um framework reproduzível
-para implementação de bibliotecas e drivers em Céu-Arduino, e que tal possa ser utilizado para
-facilitar o trabalho de futuros desenvolvedores. O processo será documentado com esse objetivo em
-mente.
-\par Uma aplicação em Sistemas Distribuídos será feita, por fim, de modo a servir como objeto de teste e
-estudo das bibliotecas e drivers implementados. Espera-se que os dados coletados mostrem
-claramente as vantagens da utilização de versões não-bloqueantes dos módulos. Embora ainda não
-tenha seu escopo definido por completo, a aplicação envolverá uma rede de sensores e atuadores, de
-modo a demonstrar os módulos implementados de interface com sensores e atuadores, como o Wire
-para dispositivos I2C e Analog I/O para sensores e atuadores analógicos. Os componentes irão
-utilizar protocolos de troca de mensagens para transmitirem informação e se sincronizarem. O uso
-das novas chamadas não-bloqueantes permitirá à aplicação melhor realizar seus ciclos
-computacionais para realizar essas tarefas, já que os ciclos antes gastos com polling dos drivers de
-sensores e atuadores será utilizado para processamento dos dados e mensagens.
-\par Como os exemplos dados na introdução (sistema de iluminação inteligente; sistema de irrigação
-monitorada; um controlador de tráfego), busca-se uma estrutura onde existem unidades distribuídas
-pelo ambiente responsáveis por coleta de informação e / ou realização de ações, trocando
-informação e se sincronizando por troca de mensagens. Essa é uma boa estrutura para exemplificar
-os módulos desenvolvidos pois os sensores e atuadores justificarão o uso das novas interfaces não
-bloqueantes, liberando a aplicação para processar os dados coletados e trocar mensagens com
-eficiência de modo a manter a sincronização e estabilidade do sistema a um menor consumo de
-energia.
-\section{Atividades Realizadas}
+\section{Drivers}
+
+\subsection{Metodologia}
+\subsubsection{Estudo do Ambiente}
+\paragraph{Estudo do Ambiente de Desenvolvimento C}
+\paragraph{Estudo do Hardware}
+\subsubsection{Implementação Intermediária}
+\paragraph{Implementação Original}
+\paragraph{Implementação Mínima Viável}
+\subsubsection{Implementação Final}
+\paragraph{Estudo do Ambiente de Desenvolvimento Céu}
+\paragraph{Implementação em Céu}
+
+
+\subsection{Analog I/O}
+
 \tab Como primeira etapa do projeto foram definidos os módulos para os quais implementações não-
 bloqueantes em Céu serão desenvolvidas. Os módulos são Entrada e Saída Analógica (Analog
 I/O), Comunicação SPI (SPI), Comunicação Serial (Serial), Suporte a RTC Externo
@@ -355,7 +357,7 @@ desenvolvimento do driver.
 voltagem analógicos. A referência para este módulo no texto daqui em diante será “Analog I/O”,
 significando “Entrada e Saída Analógica”.
 
-\subsection{Estudo do Ambiente de Desenvolvimento C}
+\paragraph{Estudo do Ambiente}
 
 \tab O ambiente de desenvolvimento que usa a linguagem C é o mesmo tanto para Arduino quanto para
 Céu-Arduino. Isto é, ambos os códigos são em alguma etapa compilados utilizando o mesmo
@@ -372,10 +374,7 @@ de interrupções que torna simples a implementação de tais ISRs.
 módulo, e o acesso ao hardware ficará transparente para o desenvolvedor, que irá tratar os
 registradores como vetores de bits. Como será mencionado posteriormente, isso procede tanto para
 o ambiente de desenvolvimento C quanto o ambiente Céu.
-
-\subsection{Estudo do Hardware}
-
-\tab AVR disponibiliza um documento detalhado \cite{wortmann2015} das especificações do microcontrolador presente no
+\par AVR disponibiliza um documento detalhado \cite{wortmann2015} das especificações do microcontrolador presente no
 Arduino Uno, o AtMega328p. Esse documento, chamado datasheet, possui a definição de todas as
 funcionalidades e hardwares dedicados presentes, incluindo a definição e descrição dos registradores
 responsáveis e atrelados a cada um. Esse documento é vital para o entendimento das capacidades e
@@ -413,7 +412,7 @@ iniciar a conversão, basta que o software escreva o valor lógico 1 no bit ADSC
 conversão tiver fim e o resultado estiver disponível. Os nomes técnicos dos bits e registradores serão
 referenciados no texto quando descrevendo a implementação.
 
-\subsection{Implementação Original}
+\paragraph{Implementação Intermediária}
 
 \tab A implementação atual de uma função de leitura analógica, presente na biblioteca de funções
 disponibilizada pela Arduino, possui como único argumento o pino para qual a conversão deve ser
@@ -424,8 +423,7 @@ Para aguardar o fim da conversão, o código faz polling em ADSC. Como já discu
 o motivo da aplicação apresentar um comportamento bloqueante, e é o que o projeto visa eliminar.
 Após ADSC ter sido zerado pelo hardware, a função segue sua execução e retorna o valor do
 resultado.
-\subsection{Implementação Mínima Viável}
-\tab Após a funcionalidade ter sido estudada do ponto de vista do hardware e do software (caso este seja
+\par Após a funcionalidade ter sido estudada do ponto de vista do hardware e do software (caso este seja
 disponível), a causa do comportamento bloqueante da aplicação deverá ter sido identificada e uma
 solução idealizada. Essa solução pode ter como base a capacidade do hardware de gerar interrupções
 ou quaisquer outros métodos para que não seja necessário à aplicação consultar o hardware, e sim
@@ -460,7 +458,7 @@ função para iniciar a conversão e, depois que a segunda função retorne um v
 (representando que uma conversão não está em progresso), chamar a terceira função para obter o
 resultado.
 
-\subsection{Estudo do Ambiente de Desenvolvimento Céu}
+\paragraph{Implementação Final}
 
 \tab A linguagem Céu permite uma forte integração com C, sendo capaz de chamar funções e acessar
 variáveis declaradas e contidas no contexto C. Isso permite que parte da implementação mínima
@@ -477,10 +475,7 @@ orientação a eventos prevista no modelo Céu.
 modelada como um evento emitido pelo driver. Deste modo, a API consiste na requisição de uma
 conversão por parte da aplicação e da emissão, por parte da API, de um evento que carrega o
 resultado.
-
-\subsection{Implementação em Céu}
-
-\tab Após ter a API modelada em Céu, o desenvolvedor possuiu todas as ferramentas para produzir a
+\par Após ter a API modelada em Céu, o desenvolvedor possuiu todas as ferramentas para produzir a
 solução final. Deve-se buscar tirar o máximo de proveito possível do trabalho realizado nas etapas
 anteriores.
 \par A implementação em Céu do módulo ADC constituiu ter uma função que iniciava uma conversão,
@@ -498,81 +493,25 @@ implementação original, a aplicação não poderia fazer uso desse tempo de �
 bloqueada consultando o driver para saber se a conversão já havia terminado. O contraste entre as
 duas aplicações e, por consequência, o contraste entre as duas APIs ficam claros.
 
-\section{Revisão do Plano de Ação}
+\subsection{SPI}
 
-\tab Embora o planejamento original previsse um estudo de todos os módulos antes da implementação,
-foi percebido que tratar cada módulo separadamente é mais vantajoso em termos de aprendizado e
-produtividade, visto que o estudo e modelagem da solução para cada módulo é independente dos
-outros módulos. Além disso, implementar uma API por completo promove experiência que será útil
-no desenvolvimento das soluções seguintes.
-\par Deste modo, embora as etapas previstas anteriormente para todos os módulos permanecem
-pertinentes, elas serão realizadas dentro do âmbito de cada módulo. O novo planejamento e
-cronograma, para evitar redundâncias, será dividido por módulo.
-\par Segue o novo planejamento e explicação breve das etapas e objetivos esperados para o cumprimento
-do projeto:
-\begin{itemize}
+\paragraph{Estudo do Ambiente}
+\paragraph{Implementação Intermediária}
+\paragraph{Implementação Final}
 
-\item Definição dos módulos. Serão definidos quais módulos serão implementados em Céu ao
-longo do projeto.
-\item Desenvolver módulo. Para cada um dos cinco módulos propostos:
-\begin{itemize}
+\subsection{RF24}
 
-\item Aprofundamento no estado da arte. Será estudada a implementação atual de
-biblioteca e driver de Arduino que causam o bloqueio da aplicação. Serão estudadas
-as implementações de bibliotecas e drivers em Céu, de modo a melhor conhecer o
-padrão proposto pela linguagem.
-\item Estudo do hardware. Análise baixo-nível das consequências do código em C da
-plataforma Arduino de modo a entender como o microcontrolador reage, utilizando
-datasheet como referência.
-\item Elaborar alternativas e soluções. Planos de ação para uma implementação não-
-bloqueante.
-\item Implementação dos módulos. Serão desenvolvidos o driver e biblioteca, em conjunto
-com aplicação que exemplifique suas funcionalidades.
-\item Documentação dos módulos. O módulo desenvolvido sofrerá quaisquer ajustes
-necessários para que siga o padrão previsto em Céu-Arduino e esteja considerado
-pronto para uso. Toda modificação ao módulo a partir deste ponto deve ser mínima
-visto que a etapa de desenvolvimento do mesmo deve ser dada como completa.
+\paragraph{Estudo do Ambiente}
+\paragraph{Implementação Intermediária}
+\paragraph{Implementação Final}
 
-\end{itemize}
+\section{Aplicação}
 
-\item Definição do escopo da aplicação. A aplicação deve ser capaz de demonstrar as vantagens da
-reimplementação de cada módulo desenvolvido. A aplicação envolverá comunicação entre
-módulos independentes a fim de sincronização como esperado de uma aplicação de sistemas
-distribuídos.
-\item Desenvolvimento da aplicação. Deve ser desenvolvida e modelada de modo que seja viável a
-coleta de dados.
-\item Análise dos dados e relatório. Com base na análise dos dados será feito um relatório
-demonstrando as vantagens e proponho melhorias para os módulos desenvolvidos.
+\subsection{Proposta}
+\subsection{Desenvolvimento}
+\subsection{Resultado}
 
-\end{itemize}
-
-\section{Cronograma}
-
-\begin{center}
-\begin{tabular}{|c|c|c|c|c|c|c|c|c|}
-\hline
-&Mês 1&Mês 2&Mês 3&Mês 4&Mês 5&Mês 6&Mês 7&Mês 8 \\
-\hline
-Definição dos módulos & \cellcolor[HTML]{808080} &&&&&&& \\
-\hline
-Desenvolver módulo Analog I/O & \cellcolor[HTML]{808080} & \cellcolor[HTML]{808080} &&&&&& \\
-\hline
-Desenvolver módulo SPI && \cellcolor[HTML]{808080} & \cellcolor[HTML]{808080} &&&&& \\
-\hline
-Desenvolver módulo Serial &&& \cellcolor[HTML]{808080} & \cellcolor[HTML]{808080} &&&& \\
-\hline
-Desenvolver módulo External RTC &&&& \cellcolor[HTML]{808080} & \cellcolor[HTML]{808080} &&& \\
-\hline
-Desenvolver módulo EEPROM &&&&& \cellcolor[HTML]{808080} & \cellcolor[HTML]{808080} && \\
-\hline
-Definir escopo da aplicação &&&&&& \cellcolor[HTML]{808080} && \\
-\hline
-Desenvolver a aplicação &&&&&&& \cellcolor[HTML]{808080} & \cellcolor[HTML]{808080}  \\
-\hline
-Análisar dados e produzir relatório &&&&&&&& \cellcolor[HTML]{808080}  \\
-\hline
-\end{tabular}
-\end{center}
+\section{Comentários Finais}
 
 \newpage
 
