@@ -302,14 +302,18 @@ bloqueante.
 \label{fig:test}
 \end{figure}
 
-\par Kits de desenvolvimento para microcontroladores que ajudam a abstrair a implementação do
-hardware do programador são sempre benéficos por tornarem o processo de desenvolvimento de
-aplicações para aquele módulo mais simples e acessível. Microcontroladores Arduino são
-normalmente programados em um ambiente de linguagem C, uma linguagem procedural, e os drivers
-e bibliotecas disponibilizados pela própria Arduino apresentam atualmente funções e módulos que
-causam o bloqueio da aplicação por utilizarem a técnica de polling. Embora existam reimplementações
-por parte da comunidade de alguns desses módulos de forma a eliminar o bloqueio, Céu-Arduino
-ainda não possui bibliotecas implementadas em Céu que resolvam o problema.
+\par A grande maioria dos microcontroladores oferece suporte a interrupções externas. A implementação desse suporte se dá em um pino do microcontrolador que diapara uma interrupção na presença de uma mudança de estado específica no pino. Para que um driver de um dispositivo forneça suporte a interrupções, portanto, basta que o dispositivo possua uma saída que emita uma mudança de estado na ocorrência de eventos relevantes. Ao conectar esta saída ao pino de interrupção externa do microcontrolador, é possível mapear um evento do dispositivo a uma interrupção do microcontrolador, permiindo a orientação a evento que torna possível evitar o bloqueio desnecessário da aplicação.
+\par Esse modelo é uma convenção de ambas as partes e se repete nos microcontroladores mais populares do mercado, incluindo Arduino, assim como nos dispositivos externos fabricados para sistemas embarcados. Isso facilita o desenvolvimento de drivers e bibliotecas para ambas as partes.
+\par Kits de desenvolvimento para microcontroladores que ajudam a abstrair a implementação do hardware do programador são sempre benéficos por tornarem o processo de desenvolvimento de aplicações para aquele módulo mais simples e acessível. Os drivers e bibliotecas disponibilizados pela própria Arduino apresentam atualmente funções e módulos que causam o bloqueio da aplicação por utilizarem a técnica de polling, embora existam reimplementações por parte da comunidade de alguns desses módulos de forma a eliminar o bloqueio.
+
+\subsection{Arduino}
+
+\par Introdução sobre a plataforma Arduino aqui. Mencionar rapidamente a plataforma, alguns projetos, o fato que utiliza C, o bloqueio dos drivers fornecendo um exemplo (SPI pode se provar ser o mais fácil por ser claro o polling).
+\par Microcontroladores Arduino são normalmente programados em um ambiente de linguagem C, uma linguagem procedural.
+
+\subsection{Céu}
+\subsection{Céu-Arduino}
+
 \par O kit de desenvolvimento Céu-Arduino apresenta uma abordagem única para o desenvolvimento
 orientado a eventos e suporte a interrupções, e se encontra atualmente em um estado inicial. O
 projeto está em uma versão 0.20 e conta com exemplos básicos de aplicações em Arduino queutilizam a linguagem Céu. Apesar de não possuir somente poucas bibliotecas e drivers desenvolvidos
