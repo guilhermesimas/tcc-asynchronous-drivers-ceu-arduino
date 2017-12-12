@@ -26,6 +26,43 @@
 \setlength{\oddsidemargin}{.125in}
 \setlength{\textwidth}{6.25in}
 
+\lstset{literate=
+  {á}{{\'a}}1 {é}{{\'e}}1 {í}{{\'i}}1 {ó}{{\'o}}1 {ú}{{\'u}}1
+  {Á}{{\'A}}1 {É}{{\'E}}1 {Í}{{\'I}}1 {Ó}{{\'O}}1 {Ú}{{\'U}}1
+  {à}{{\`a}}1 {è}{{\`e}}1 {ì}{{\`i}}1 {ò}{{\`o}}1 {ù}{{\`u}}1
+  {À}{{\`A}}1 {È}{{\'E}}1 {Ì}{{\`I}}1 {Ò}{{\`O}}1 {Ù}{{\`U}}1
+  {ä}{{\"a}}1 {ë}{{\"e}}1 {ï}{{\"i}}1 {ö}{{\"o}}1 {ü}{{\"u}}1
+  {Ä}{{\"A}}1 {Ë}{{\"E}}1 {Ï}{{\"I}}1 {Ö}{{\"O}}1 {Ü}{{\"U}}1
+  {â}{{\^a}}1 {ê}{{\^e}}1 {î}{{\^i}}1 {ô}{{\^o}}1 {û}{{\^u}}1
+  {Â}{{\^A}}1 {Ê}{{\^E}}1 {Î}{{\^I}}1 {Ô}{{\^O}}1 {Û}{{\^U}}1
+  {œ}{{\oe}}1 {Œ}{{\OE}}1 {æ}{{\ae}}1 {Æ}{{\AE}}1 {ß}{{\ss}}1
+  {ű}{{\H{u}}}1 {Ű}{{\H{U}}}1 {ő}{{\H{o}}}1 {Ő}{{\H{O}}}1
+  {ç}{{\c c}}1 {Ç}{{\c C}}1 {ø}{{\o}}1 {å}{{\r a}}1 {Å}{{\r A}}1
+  {€}{{\euro}}1 {£}{{\pounds}}1 {«}{{\guillemotleft}}1
+  {»}{{\guillemotright}}1 {ñ}{{\~n}}1 {Ñ}{{\~N}}1 {¿}{{?`}}1
+  {ã}{{\~a}}1 {Ã}{{\~A}}1
+}
+
+\definecolor{backgroundColour}{rgb}{0.95,0.95,0.92}
+
+\lstdefinestyle{CStyle}{
+    backgroundcolor=\color{backgroundColour},   
+    basicstyle=\footnotesize,
+    breakatwhitespace=false,         
+    breaklines=true,                 
+    captionpos=b,                    
+    keepspaces=true,                 
+    numbers=left,                    
+    numbersep=5pt,                  
+    showspaces=false,                
+    showstringspaces=false,
+    showtabs=false,                  
+    tabsize=2,
+    language=C
+}
+
+\renewcommand{\lstlistingname}{Exemplo}
+
 % Defining references here
 
 \begin{filecontents}{\jobname.bib}
@@ -201,7 +238,7 @@ Ana \textsc{Lúcia de Moura} % Supervisor's Name
 \section{Introdução}	
 
 
-\ab Existem várias definições do termo “Internet das
+\tab Existem várias definições do termo “Internet das
 Coisas”, porém a grande maioria delas compartilha a opinião de que a conexão e troca de dados
 entre elementos é parte vital do conceito. Por esse motivo, a área de Sistemas Distribuídos possui um
 papel importantíssimo nesse desenvolvimento, já que toda aplicação deve ser capaz de trocar
@@ -284,7 +321,7 @@ sua tarefa. Caso não haja nenhuma tarefa a ser realizada, o microcontrolador po
 modo de baixo consumo de energia, portanto sempre há ganhos por utilizar a abordagem não-
 bloqueante.
 
-\begin{figure}[!b]
+\begin{figure}[t]
 \centering
 \begin{subfigure}[b]{.5\textwidth}
   \centering
@@ -308,8 +345,90 @@ bloqueante.
 
 \subsection{Arduino}
 
-\par Introdução sobre a plataforma Arduino aqui. Mencionar rapidamente a plataforma, alguns projetos, o fato que utiliza C, o bloqueio dos drivers fornecendo um exemplo (SPI pode se provar ser o mais fácil por ser claro o polling).
-\par Microcontroladores Arduino são normalmente programados em um ambiente de linguagem C, uma linguagem procedural.
+\tab Arduino é uma plataforma eletrônica open-source que foca em hardware e software de fácil aprendizado e acesso. Comumente utilizado para prototipação, rduino conta atualmente com a contribuição de uma vasta comunidade que realiza os mais diversos projetos de sistemas-embarcados, de complexidade variada. \cite{arduinoblog}
+\par A plataforma consiste em uma placa de prototipação com um microcontrolador embarcado. A placa possui pinos de entrada e saída com grande foco em GPIO (General Purpose Input and Output). A programação se dá via linguagem C adaptada com bilbiotecas e drivers, com a implementação obrigatória de duas funções que definem a aplicação (ver Exemplo \ref{estruturaarduino}). O conjunto de ferramentas permite a abstração de elementos específicos à programação de microcontroladores como acessos a registradores, por exemplo, permitindo um desenvolvimento mais alto-nível, acessível e portável. Arduino oferece dezenas de placas diferentes, de especificações variadas de forma a atender diversas demandas. A placa mais popular, porém, é a Arduino Uno, que possuiu embarcado o microcontrolador ATmega328P, da Atmel \cite{atmegadatasheet}. Todo o desenvolvimento realizado neste projeto foi focado únicamente na portabilidade para o ambiente deste microcontrolador, embora a adaptação para outros produtos da Arduino seja facilitada pela proposta de portabilidade da empresa.
+\begin{lstlisting}[style=CStyle,label=estruturaarduino,caption=Estrutura de uma aplicação Arduino]
+void setup(void){
+  // Esse bloco é executado uma vez somente, na inicialização da aplicação
+}
+void loop(void){
+  // Este bloco é repetido em loop durante toda o período de execução da aplicação
+}
+\end{lstlisting}
+\par Como já mencionado, microcontroladores Arduino são programados em um ambiente de linguagem C, uma linguagem procedural. A linguagem segue a lógica de procedência temporal e lógica dos comandos por ordem de leitura, o que significa que espera-se que um comando só seja executado quando o precedente acima dele termina sua execução. A utilização da linguagem C para programação em sistemas embarcados, embora bem difundida, sofre com a dificuldade de linguagens procedurais de implementarem a orientação a eventos de forma concisa e clara. Aplicações simples se convertem em pedaços de código de difícil interpretação, como pode ser visto na comparação entre o Exemplo \ref{orientacaoevento1} e \ref{orientacaoevento1}.
+\begin{lstlisting}[style=CStyle,label=orientacaoevento1,caption=Aplicação orientada a evento]
+/*
+  Blink without Delay
+
+  Turns on and off a light emitting diode (LED) connected to a digital pin,
+  without using the delay() function. This means that other code can run at the
+  same time without being interrupted by the LED code.
+
+  The circuit:
+  - Use the onboard LED.
+  - Note: Most Arduinos have an on-board LED you can control. On the UNO, MEGA
+    and ZERO it is attached to digital pin 13, on MKR1000 on pin 6. LED_BUILTIN
+    is set to the correct LED pin independent of which board is used.
+    If you want to know what pin the on-board LED is connected to on your
+    Arduino model, check the Technical Specs of your board at:
+    https://www.arduino.cc/en/Main/Products
+
+  created 2005
+  by David A. Mellis
+  modified 8 Feb 2010
+  by Paul Stoffregen
+  modified 11 Nov 2013
+  by Scott Fitzgerald
+  modified 9 Jan 2017
+  by Arturo Guadalupi
+
+  This example code is in the public domain.
+
+  http://www.arduino.cc/en/Tutorial/BlinkWithoutDelay
+*/
+
+// constants won't change. Used here to set a pin number:
+const int ledPin =  LED_BUILTIN;// the number of the LED pin
+
+// Variables will change:
+int ledState = LOW;             // ledState used to set the LED
+
+// Generally, you should use "unsigned long" for variables that hold time
+// The value will quickly become too large for an int to store
+unsigned long previousMillis = 0;        // will store last time LED was updated
+
+// constants won't change:
+const long interval = 1000;           // interval at which to blink (milliseconds)
+
+void setup() {
+  // set the digital pin as output:
+  pinMode(ledPin, OUTPUT);
+}
+
+void loop() {
+  // here is where you'd put code that needs to be running all the time.
+
+  // check to see if it's time to blink the LED; that is, if the difference
+  // between the current time and last time you blinked the LED is bigger than
+  // the interval at which you want to blink the LED.
+  unsigned long currentMillis = millis();
+
+  if (currentMillis - previousMillis >= interval) {
+    // save the last time you blinked the LED
+    previousMillis = currentMillis;
+
+    // if the LED is off turn it on and vice-versa:
+    if (ledState == LOW) {
+      ledState = HIGH;
+    } else {
+      ledState = LOW;
+    }
+
+    // set the LED with the ledState of the variable:
+    digitalWrite(ledPin, ledState);
+  }
+}
+\end{lstlisting}
 
 \subsection{Céu}
 \subsection{Céu-Arduino}
