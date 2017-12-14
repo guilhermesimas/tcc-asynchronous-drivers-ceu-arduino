@@ -355,8 +355,8 @@ void loop(void){
   // Este bloco é repetido em loop durante toda o período de execução da aplicação
 }
 \end{lstlisting}
-\par Como já mencionado, microcontroladores Arduino são programados em um ambiente de linguagem C, uma linguagem procedural. A linguagem segue a lógica de procedência temporal e lógica dos comandos por ordem de leitura, o que significa que espera-se que um comando só seja executado quando o precedente acima dele termina sua execução. A utilização da linguagem C para programação em sistemas embarcados, embora bem difundida, sofre com a dificuldade de linguagens procedurais de implementarem a orientação a eventos de forma concisa e clara. Aplicações simples se convertem em pedaços de código de difícil interpretação, como pode ser visto na comparação entre o Exemplo \ref{orientacaoevento1} e \ref{orientacaoevento2}. Nessa comparação possuímos duas implementações que causam o mesmo resultado aparente. O objetivo é que o LED conectado à placa pisque em intervalos de um segundo. O Exemplo \cite{orientacaoevento1} consiste na aplicação feita sem orientação a eventos, o programa acende o LED, aguarda um segundo de forma blocante, desliga o LED e aguarda mais um segundo, repetindo o processo.
-\begin{lstlisting}[style=CStyle,label=orientacaoevento1,caption=Aplicação orientada a evento]
+\par Como já mencionado, microcontroladores Arduino são programados em um ambiente de linguagem C, uma linguagem procedural. A linguagem segue a lógica de procedência temporal e lógica dos comandos por ordem de leitura, o que significa que espera-se que um comando só seja executado quando o precedente acima dele termina sua execução. A utilização da linguagem C para programação em sistemas embarcados, embora bem difundida, sofre com a dificuldade de linguagens procedurais de implementarem a orientação a eventos de forma concisa e clara. Aplicações simples se convertem em pedaços de código de difícil interpretação, como pode ser visto na comparação entre o Exemplo \ref{orientacaoevento1} e \ref{orientacaoevento2}. Nessa comparação possuímos duas implementações que causam o mesmo resultado aparente. O objetivo é que o LED conectado à placa pisque em intervalos de um segundo. O Exemplo \ref{orientacaoevento1} consiste na aplicação feita sem orientação a eventos, o programa acende o LED, aguarda um segundo de forma blocante, desliga o LED e aguarda mais um segundo, repetindo o processo. Já no Exemplo \ref{orientacaoevento2}, a aplicação checa, a toda iteração, o tempo passado. QUando este tempo passa de um segundo, o estado do LED é trocado. Interpretando o código com eventos, a aplicação está aguardando o evento "passou-se um segundo" para então executar o bloco de código "inverta o estado do LED". Embora a lógica seja simples, a implementação nao fica tão clara. Quando aumentamos a complexidade e possuímos mais eventos na aplicação, a legibilidade do código piora mais ainda. 
+\begin{lstlisting}[style=CStyle,label=orientacaoevento1,caption=Aplicação não orientada a evento]
 /*
   Blink
 
@@ -396,7 +396,7 @@ void loop() {
 }
 \end{lstlisting}
 
-\begin{lstlisting}[style=CStyle,label=orientacaoevent2,caption=Aplicação não orientada a evento]
+\begin{lstlisting}[style=CStyle,label=orientacaoevento2,caption=Aplicação orientada a evento]
 /*
   Blink without Delay
 
@@ -469,7 +469,42 @@ void loop() {
   }
 }
 \end{lstlisting}
+\par De um ponto de vista mais funcional, o código também desperdiça ciclos computacionais pelo volume de checagens. O evento é checado frequentemente para que o sistema permaneça responsivo, sacrificando ciclos pelas checagens que falham, em um exemplo de polling. Outro problema causado por este modelo é que, no caso de um sistema mais complexo, manter a responsividade se torna inviável, já que o bloco iterado pela aplicação cresce e os intervalos entre checagens de cada evento crescem. O uso de interrupções faz um bom papel de amenizar a questão da responsividade. No Exemplo \ref{interrupcao1} possuímos um código que atinge o mesmo resultado dos Exemplos \ref{orientacaoevento1} e \ref{orientacaoevento2}, porém fazendo o uso de interrupções. A aplicação faz uso de um timer interno ao microcontrolador para gerar uma interrupção a cada um segundo. Cada vez que a interrupção ocorre, a aplicação executa um bloco de código associado à interrupção, uma função de callback. Essa função configura o valor de uma variável que marca o acontecimento do evento. No bloco principal da aplicação, o valor desta variável é checado para se detectar o acontecimento do evento e realizar a ação correspondente, que neste caso é inverter o valor do LED.
+\par Neste exemplo o sistema fica mais responsivo pois o bloco principal só consulta o valor da variável. O problema de desperdíçio de ciclos permanece, porém, já que a consulta à variável permanece, caracterizando polling novamente. O código também não é claro já que o entendimento depende da compreensão da interrupção e de como as duas sessões do código (callback da interrupção e consulta no bloco principal) interagem.
 
+\begin{lstlisting}[style=CStyle,label=interrupcao1,caption=Aplicação utilizando interrupção]
+#define ledPin 13
+volatile bool timerEvent = FALSE;
+void setup()
+{
+ pinMode(ledPin, OUTPUT);
+
+ // initialize timer1 
+ noInterrupts();    // disable all interrupts
+ TCCR1A = 0;
+ TCCR1B = 0;
+
+ TCNT1 = 3036;    // preload timer 65536-16MHz/256/1Hz
+ TCCR1B |= (1 << CS12);    // 256 prescaler 
+ TIMSK1 |= (1 << TOIE1);   // enable timer overflow interrupt
+ interrupts();    // enable all interrupts
+  
+ Serial.begin(9600);
+}
+
+ISR(TIMER1_OVF_vect)
+{
+ timerEvent = TRUE;
+}
+
+void loop()
+{
+ if(timerWentOff){
+  timerWentOff = FALSE;
+  digitalWrite(ledPin, digitalRead(ledPin)^1);
+ }
+}
+\end{lstlisting}
 \subsection{Céu}
 \subsection{Céu-Arduino}
 
