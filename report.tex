@@ -239,7 +239,7 @@ Ana \textsc{Lúcia de Moura} % Supervisor's Name
 
 
 \tab Existem várias definições do termo “Internet das
-Coisas”, porém a grande maioria delas compartilha a opinião de que a conexão e troca de dados
+Coisas”, porém a grande maioria delas compartilha a ideia de que a conexão e troca de dados
 entre elementos é parte vital do conceito. Por esse motivo, a área de Sistemas Distribuídos possui um
 papel importantíssimo nesse desenvolvimento, já que toda aplicação deve ser capaz de trocar
 mensagens e informação segura e corretamente de forma a se sincronizar, e de forma escalável. \cite{singh2014}
@@ -250,7 +250,7 @@ facilidade na programação devido a bibliotecas e drivers já implementados e d
 Microcontroladores são capazes de processamento de dados por possuírem processadores e de
 serem facilmente integrados com sensores e atuadores, possuindo hardware especializado para
 interfacear com esses componentes.
-\par Muitas ferramentas de desenvolvimento fornecidos por microcontroladores incluem rotinas que causam um bloqueio na
+\par Muitas ferramentas de desenvolvimento fornecidos para microcontroladores incluem rotinas que causam um bloqueio na
 aplicação, ou seja, enquanto está realizando a chamada correspondente àquela funcionalidade, o
 software entra em um estado onde realiza tarefas virtualmente inúteis até que o hardware conclua sua
 parte. Esse comportamento é indesejável visto que a aplicação desperdiça tempo aguardando o
@@ -296,7 +296,7 @@ eventos e, por esse motivo, a linguagem escolhida para esse desenvolvimento foi 
 resultados desse desenvolvimento foram publicados na página open-source de desenvolvimento do
 kit, para que futuros desenvolvedores possam fazer uso de tais módulos em suas próprias aplicações
 e objetivos.
-\par Por fim, foi desenvolvida uma aplicação em Sistemas Distribuídos para exemplificar a pertinência
+\par Por fim, foi desenvolvemos uma aplicação em Sistemas Distribuídos para exemplificar a pertinência
 dos módulos desenvolvidos. A aplicação consistiu em uma rede de sensores e atuadores na
 plataforma Arduino, utilizando troca de mensagens. Alguns exemplos que satisfazem
 os requisitos e objetivos são: Um sistema de iluminação inteligente; um sistema de irrigação
@@ -313,8 +313,7 @@ desenvolvedores da plataforma Arduino. \cite{wortmann2015} \cite{chui2010} \cite
 \tab Bloqueios em chamadas de drivers de microcontroladores são comumente causados por implementações que usam polling para checar se a operação foi concluída. Polling é caracterizado
 quando o software constantemente checa um estado, aguardando uma mudança, para só então
 prosseguir. Funcionalidades de hardware especializado em microcontroladores costumam sinalizar sua
-conclusão mudando o estado de um registrador, caracterizando uma flag. Implementações não-
-bloqueantes de chamadas de drivers podem envolver fazer com que a mudança de estado da flag cause
+conclusão mudando o estado de um registrador, caracterizando uma flag. Implementações não-bloqueantes de chamadas de drivers podem envolver fazer com que a mudança de estado da flag cause
 uma interrupção, de modo que o software não precisa ficar no estado de polling e possa usar o tempo
 para realizar outras operações na aplicação, só retornando à chamada do driver quando este concluiu
 sua tarefa. Caso não haja nenhuma tarefa a ser realizada, o microcontrolador pode entrar em um
@@ -326,26 +325,26 @@ bloqueante.
 \begin{subfigure}[b]{.5\textwidth}
   \centering
   \includegraphics[width=.4\linewidth]{BlockingSequence}
-  \caption{Comportamento blocante}
+  \caption{Comportamento bloqueante}
   \label{fig:sub1}
 \end{subfigure}%
 \begin{subfigure}[b]{.5\textwidth}
   \centering
   \includegraphics[width=.4\linewidth]{NonBlockingSequence}
-  \caption{Comportamento não-blocante}
+  \caption{Comportamento não-bloqueante}
   \label{fig:sub2}
 \end{subfigure}
-\caption{Comparação entre comportamento blocante e não-blocante}
+\caption{Comparação entre comportamento bloqueante e não-bloqueante}
 \label{fig:test}
 \end{figure}
 
-\par A grande maioria dos microcontroladores oferece suporte a interrupções externas. A implementação desse suporte se dá em um pino do microcontrolador que diapara uma interrupção na presença de uma mudança de estado específica no pino. Para que um driver de um dispositivo forneça suporte a interrupções, portanto, basta que o dispositivo possua uma saída que emita uma mudança de estado na ocorrência de eventos relevantes. Ao conectar esta saída ao pino de interrupção externa do microcontrolador, é possível mapear um evento do dispositivo a uma interrupção do microcontrolador, permiindo a orientação a evento que torna possível evitar o bloqueio desnecessário da aplicação.
+\par A grande maioria dos microcontroladores oferece suporte a interrupções externas. A implementação desse suporte se dá em um pino do microcontrolador que dispara uma interrupção na presença de uma mudança de estado específica no pino. Para que um driver de um dispositivo forneça suporte a interrupções, portanto, basta que o dispositivo possua uma saída que emita uma mudança de estado na ocorrência de eventos relevantes. Ao conectar esta saída ao pino de interrupção externa do microcontrolador, é possível mapear um evento do dispositivo a uma interrupção do microcontrolador, permitindo a orientação a evento que torna possível evitar o bloqueio desnecessário da aplicação.
 \par Esse modelo é uma convenção de ambas as partes e se repete nos microcontroladores mais populares do mercado, incluindo Arduino, assim como nos dispositivos externos fabricados para sistemas embarcados. Isso facilita o desenvolvimento de drivers e bibliotecas para ambas as partes.
-\par Kits de desenvolvimento para microcontroladores que ajudam a abstrair a implementação do hardware do programador são sempre benéficos por tornarem o processo de desenvolvimento de aplicações para aquele módulo mais simples e acessível. Os drivers e bibliotecas disponibilizados pela própria Arduino apresentam atualmente funções e módulos que causam o bloqueio da aplicação por utilizarem a técnica de polling, embora existam reimplementações por parte da comunidade de alguns desses módulos de forma a eliminar o bloqueio.
+\par Kits de desenvolvimento para microcontroladores que ajudam a abstrair a implementação do hardware do programador são sempre benéficos por tornarem o processo de desenvolvimento de aplicações para aquele módulo mais simples e acessível. Contudo, os drivers e bibliotecas disponibilizados pela própria Arduino apresentam atualmente funções e módulos que causam o bloqueio da aplicação por utilizarem a técnica de polling, embora existam reimplementações por parte da comunidade de alguns desses módulos de forma a eliminar o bloqueio.
 
 \subsection{Arduino}
 
-\tab Arduino é uma plataforma eletrônica open-source que foca em hardware e software de fácil aprendizado e acesso. Comumente utilizado para prototipação, rduino conta atualmente com a contribuição de uma vasta comunidade que realiza os mais diversos projetos de sistemas-embarcados, de complexidade variada. \cite{arduinoblog}
+\tab Arduino é uma plataforma eletrônica open-source que foca em hardware e software de fácil aprendizado e acesso. Comumente utilizado para prototipação, Arduino conta atualmente com a contribuição de uma vasta comunidade que realiza os mais diversos projetos de sistemas-embarcados, de complexidade variada. \cite{arduinoblog}
 \par A plataforma consiste em uma placa de prototipação com um microcontrolador embarcado. A placa possui pinos de entrada e saída com grande foco em GPIO (General Purpose Input and Output). A programação se dá via linguagem C adaptada com bilbiotecas e drivers, com a implementação obrigatória de duas funções que definem a aplicação (ver Exemplo \ref{estruturaarduino}). O conjunto de ferramentas permite a abstração de elementos específicos à programação de microcontroladores como acessos a registradores, por exemplo, permitindo um desenvolvimento mais alto-nível, acessível e portável. Arduino oferece dezenas de placas diferentes, de especificações variadas de forma a atender diversas demandas. A placa mais popular, porém, é a Arduino Uno, que possuiu embarcado o microcontrolador ATmega328P, da Atmel \cite{atmegadatasheet}. Todo o desenvolvimento realizado neste projeto foi focado únicamente na portabilidade para o ambiente deste microcontrolador, embora a adaptação para outros produtos da Arduino seja facilitada pela proposta de portabilidade da empresa.
 \begin{lstlisting}[style=CStyle,label=estruturaarduino,caption=Estrutura de uma aplicação Arduino]
 void setup(void){
@@ -355,7 +354,7 @@ void loop(void){
   // Este bloco é repetido em loop durante toda o período de execução da aplicação
 }
 \end{lstlisting}
-\par Como já mencionado, microcontroladores Arduino são programados em um ambiente de linguagem C, uma linguagem procedural. A linguagem segue a lógica de procedência temporal e lógica dos comandos por ordem de leitura, o que significa que espera-se que um comando só seja executado quando o precedente acima dele termina sua execução. A utilização da linguagem C para programação em sistemas embarcados, embora bem difundida, sofre com a dificuldade de linguagens procedurais de implementarem a orientação a eventos de forma concisa e clara. Aplicações simples se convertem em pedaços de código de difícil interpretação, como pode ser visto na comparação entre o Exemplo \ref{orientacaoevento1} e \ref{orientacaoevento2}. Nessa comparação possuímos duas implementações que causam o mesmo resultado aparente. O objetivo é que o LED conectado à placa pisque em intervalos de um segundo. O Exemplo \ref{orientacaoevento1} consiste na aplicação feita sem orientação a eventos, o programa acende o LED, aguarda um segundo de forma blocante, desliga o LED e aguarda mais um segundo, repetindo o processo. Já no Exemplo \ref{orientacaoevento2}, a aplicação checa, a toda iteração, o tempo passado. QUando este tempo passa de um segundo, o estado do LED é trocado. Interpretando o código com eventos, a aplicação está aguardando o evento "passou-se um segundo" para então executar o bloco de código "inverta o estado do LED". Embora a lógica seja simples, a implementação nao fica tão clara. Quando aumentamos a complexidade e possuímos mais eventos na aplicação, a legibilidade do código piora mais ainda. 
+\par Como já mencionado, microcontroladores Arduino são programados em um ambiente de linguagem C, uma linguagem procedural. A linguagem segue a lógica de procedência temporal e lógica dos comandos por ordem de leitura, o que significa que espera-se que um comando só seja executado quando o precedente acima dele termina sua execução. A utilização da linguagem C para programação em sistemas embarcados, embora bem difundida, sofre com a dificuldade de linguagens procedurais de implementarem a orientação a eventos de forma concisa e clara. Aplicações simples se convertem em pedaços de código de difícil interpretação, como pode ser visto na comparação entre o Exemplo \ref{orientacaoevento1} e \ref{orientacaoevento2}. Nessa comparação possuímos duas implementações que causam o mesmo resultado aparente. O objetivo é que o LED conectado à placa pisque em intervalos de um segundo. O Exemplo \ref{orientacaoevento1} consiste na aplicação feita sem orientação a eventos, o programa acende o LED, aguarda um segundo de forma blocante, desliga o LED e aguarda mais um segundo, repetindo o processo. Já no Exemplo \ref{orientacaoevento2}, a aplicação checa, a toda iteração, o tempo passado. Quando este tempo passa de um segundo, o estado do LED é trocado. Interpretando o código com eventos, a aplicação está aguardando o evento "passou-se um segundo" para então executar o bloco de código "inverta o estado do LED". Embora a lógica seja simples, a implementação nao fica tão clara. Quando aumentamos a complexidade e possuímos mais eventos na aplicação, a legibilidade do código piora mais ainda. 
 \begin{lstlisting}[style=CStyle,label=orientacaoevento1,caption=Aplicação não orientada a evento]
 /*
   Blink
@@ -499,8 +498,8 @@ ISR(TIMER1_OVF_vect)
 
 void loop()
 {
- if(timerWentOff){
-  timerWentOff = FALSE;
+ if(timerEvent){
+  timerEvent = FALSE;
   digitalWrite(ledPin, digitalRead(ledPin)^1);
  }
 }
