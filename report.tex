@@ -506,18 +506,26 @@ void loop()
 \end{lstlisting}
 \subsection{Céu}
 \tab Céu é uma linguagem síncrona reativa estruturada desenvolvida na PUC-Rio. A semântica de Céu permite ao usuário escrever uma aplicação reativa orientada a eventos contendo paralelismo de forma determinística e clara. A compilação de um programa em Céu consiste na transcrição do código para seu equivalente em C para então ser compilado no compilador C de escolha, gerando o executável final. Devido à portabilidade de código C, Céu se prova uma linguagem portável e de variável uso. A linguagem se destaca em aplicações que envolvem coordenação com eventos externos, como GUIs, jogos e, mais relevante para este trabalho, sistemas embarcados.
-\par O foco da linguagem na orientação a eventos se dá pelas diretivas naturais de aguardar um evento ("await") e emitir um evento ("emit"). Eventos em Céu podem ser tanto internos, emitidos pelo programa para coordenação, como externos, como timers e I/O.
-\par Céu possuiu primitivas para expressar blocos de código que devem rodar em paralelo. A execução desses blocos, chamados de trilhas, deve incluir ao menos uma espera de um evento, expressado por uma diretiva da linguagem. Ao bloquear à espera de um evento a outra trilha em paralelo pode executar. Esse modelo permite que os dois blocos de código executem se intercalando porém sem concorrência, dado que todo trecho de código delimitado por esperas a eventos (as trilhas) executam sem preempção.
+\par O foco da linguagem na orientação a eventos se dá pelas primitivas de aguardar um evento ("await") e emitir um evento ("emit"). Eventos em Céu podem ser tanto internos, emitidos pelo programa para coordenação, como externos, como timers e I/O.
+\par Céu possuiu primitivas para expressar blocos de código que devem rodar em paralelo (par, par/or, par/and). A execução desses blocos, chamados de trilhas, deve incluir ao menos uma espera de um evento, expressado por uma diretiva da linguagem. Ao bloquear à espera de um evento a outra trilha em paralelo pode executar. Esse modelo permite que os dois blocos de código executem se intercalando porém sem concorrência, dado que todo trecho de código delimitado por esperas a eventos (as trilhas) executam sem preempção. A semântica de Céu assume que o tempo de execução das trilhas é imediato se comparado com a frequência dos eventos. Caso esta diretiva seja respeitada, a aplicação permanece reativa.
 \par O processo de compilação de Céu permite que trechos de código em C possam ser executados no programa, o que facilita a execução de comandos não previstos ou contidos em Céu. Para que um programa em Céu possa interagir com o sistema desejado, basta que uma camada de ambiente seja implementada para que eventos externos possam ser captados e que a emissão de eventos externos possa ser interpretada pelo sistema alvo.
+\par No Exemplo \cite(ceu1), a aplicação em Céu executa dois blocos em paralelo (explicitado pela primitiva par do ... with ... end). O primeiro bloco aguarda um evento de passagem  de tempo, neste caso 1 segundo, para então imprimir uma mensagem na tela. O segundo bloco aguarda um evento de pressionamento de tecla, presumidamente implementado pela camada do ambiente, para em sequência imprimir uma mensgaem correspondente. O comportamento resultante é que a mensagem de tempo passado será impressa na tela a cada segundo independente do pressionamento da tecla, que irá imprimir a mensagem a cada pressionamento. 
 \begin{lstlisting}[style=CStyle,label=ceu1,caption=Aplicação em Céu que imprime mensagem cada segundo]
 input int KEY;
-par/or do
+par do
     loop do
-        _printf("Hello World!\n");
         await 1s;
+        {
+            printf("1 second has passed!\n");
+        }
     end
 with
-    await KEY;
+    loop do
+        await KEY;
+        {
+            printf("Key was pressed!\n");
+        }
+    end
 end
 \end{lstlisting}
 \subsection{Céu-Arduino}
