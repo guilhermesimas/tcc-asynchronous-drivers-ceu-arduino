@@ -462,33 +462,16 @@ end
 \end{lstlisting}
 \par O código define dois blocos para executarem em paralelo. O primeiro bloco de código consiste em um loop que pisca o LED, aguardando o evento de passagem de 1 segundo representado pela primitiva await de Céu. O segundo bloco aguarda o evento de pressionamento do botão. O qualificador "or" utilizado com a primitiva "par" expressa que, caso um dos blocos em paralelo termine sua execução, todos os outros blocos são abortados e a aplicação segue seu fluxo. Isso significa que caso o botão seja apertado, a rotina rodando em paralelo, neste caso a de piscar o LED, é abortada. Como não há mais comandos a serem executados, a aplicação termina sua execução.
 \par O comportamento reativo de implementação complexa do Exemplo \ref{orientacaoevento2} é reproduzido aqui de forma clara e estruturalmente simples, como proposto pelo Exemplo \ref{orientacaoevento1}.
-\par A compilação de um programa em Céu consiste na transcrição do código para seu equivalente em C para então ser compilado no compilador C de escolha, gerando o executável final. Isso torna possível utilizar o compilador da plataforma Arduino e desenvolver programas em Céu para os microcontroladores Arduino. Basta que uma camada de ambiente seja implementada para que eventos externos possam ser captados, como o pressionamento do botão, e que a emissão de eventos externos possa ser interpretada, como ligar e desligar o LED. Esta camada de ambiente se encontra desenvolvida e é parte do kite de desenvolvimento Céu-Arduino mantido pelos responsáveis pela linguagem Céu.
-\par A camada de ambiente permite que os eventos de entrada possam ser implementados utilizando interrupções. No caso do Exemplo \ref{ceu1}, basta que a interrupção atrelada ao pino dispare o evento BUTTON_PRESS para que a aplicação possua a eficiência proposta pelo Exemplo \ref{orientacaoevento3}.
+\par A compilação de um programa em Céu consiste na transcrição do código para seu equivalente em C para então ser compilado no compilador C de escolha, gerando o executável final. Isso torna possível utilizar o compilador da plataforma Arduino e desenvolver programas em Céu para os microcontroladores Arduino. Basta que uma camada de ambiente seja implementada para que eventos externos possam ser captados, como o pressionamento do botão, e que a emissão de eventos externos possa ser interpretada, como ligar e desligar o LED. Esta camada de ambiente se encontra desenvolvida e é parte do kite de desenvolvimento Céu-Arduino mantido pelos responsáveis pela linguagem Céu\cite{githubceuarduino}.
+\par A camada de ambiente permite que os eventos de entrada possam ser implementados utilizando interrupções. No caso do Exemplo \ref{ceu1}, basta que a interrupção atrelada ao pino dispare o evento BUTTON\textunderscore PRESS para que a aplicação possua a eficiência proposta pelo Exemplo \ref{interrupcao1}.
 \par Contribuimos para esta camada de ambiente neste projeto com os drivers que desenvolvemos, de módulos da plataforma Arduino, utilizando interrupções, de forma a enriquecer o kit.
-\subsection{Céu-Arduino}
-
-\par O kit de desenvolvimento Céu-Arduino apresenta uma abordagem única para o desenvolvimento
-orientado a eventos e suporte a interrupções, e se encontra atualmente em um estado inicial. O
-projeto está em uma versão 0.20 e conta com exemplos básicos de aplicações em Arduino queutilizam a linguagem Céu. Apesar de não possuir somente poucas bibliotecas e drivers desenvolvidos
-em Céu, a linguagem é de fácil integração com C, sendo possível utilizar os módulos desenvolvidos
-atualmente para Arduino. \cite{githubceuarduino}
-
 \section{Drivers}
-
-\subsection{Metodologia}
-\subsubsection{Estudo do Ambiente}
-\paragraph{Estudo do Ambiente de Desenvolvimento C}
-\paragraph{Estudo do Hardware}
-\subsubsection{Implementação Intermediária}
-\paragraph{Implementação Original}
-\paragraph{Implementação Mínima Viável}
-\subsubsection{Implementação Final}
-\paragraph{Estudo do Ambiente de Desenvolvimento Céu}
-\paragraph{Implementação em Céu}
-
-
-\subsection{Analog I/O}
-
+\tab O microcontrolador AtMega328p possuiu funcionalidades e módulos embarcados. A platadorma Arduino disponibiliza drivers em C para esses módulos que, apesar do hardware suportar interrupções, utiliza polling. Partimos do estudo de tais drivers em C e do hardware para produzirmos versões em Céu que utilizem interrupção e, assim, oferecem as vantagens já descritas para o desenvolvimento de aplicações. As soluções desenvolvidas neste projeto se encontram disponíveis no repositório open-source do kit Céu-Arduino.
+\par O processo de desenvolvimento que realizamos consistiu em, primeiramente, estudar o ambiente. Isso envolveu entender o hardware do módulo e seus limites, principalmente em relação a interrupções. Esclarecer em quais momentos o hardware opera sem necessidade de interferência do software indica onde a aplicação poderá entrar em modo de espera, sendo acordado pela interrupção. Esse processo, acompanhado do estudo da implementação já existente dos drivers bloqueantes disponibilizados, permite identificar onde o bloqueio desnecessário do driver, o polling, ocorre, e como ele pode ser evitado.
+\par Com o conhecimento do suporte a interrupção e a identificação do bloqueio, pudemos modificar o driver para que não seja mais bloqueante. A função que realizava a operação por completo, se divide em funções que iniciam a operação, funções que consultam o estado da operação e, caso necessário, funções que finalizam a operação. Isso torna possível que a aplicação possa realizar outras operações entre consultas ao estado, o que na chamada bloqueante não era possível. Utilizar interrupções permite que o hardware entre em um modo de baixo consumo e seja acordado pela interrupção, contribuindo para a eficiência da solução no uso de recursos.
+\par O passo final foi, com o driver não bloqueante em C em mãos, convertê-lo para Céu. As funções são transformadas em eventos de entrada e saída. Expressamos o início de uma operação no hardware por parte da aplicação como a emissão de um evento de saída. Ao finalizar a operação, o driver emite um evento de entrada, o qual a aplicação pode aguardar com await. Deste modo fica explícito no bloco de código que o programa emite uma requisição ao módulo e aguarda sua resposta, podendo realizar tarefas no meio tempo de forma clara devido ao paralelismo da linguagem. Quando maior complexidade era necessária, abstrações da linguagem foram usadas.
+\par Escolhemos módulos que causam maior impacto devido à frequência de sua utilização em aplicações de sistemas embarcados. As escolhas foram o conversor analógico para digital que possibilita realizar leituras analógicas e a interface SPI. 
+\subsection{Analog}
 \tab Como primeira etapa do projeto foram definidos os módulos para os quais implementações não-
 bloqueantes em Céu serão desenvolvidas. Os módulos são Entrada e Saída Analógica (Analog
 I/O), Comunicação SPI (SPI), Comunicação Serial (Serial), Suporte a RTC Externo
