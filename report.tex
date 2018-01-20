@@ -351,7 +351,7 @@ void loop(void){
 \end{lstlisting}
 \par Como já mencionado, microcontroladores Arduino são programados em um ambiente de linguagem C, uma linguagem procedural. A linguagem segue a lógica de procedência temporal e lógica dos comandos por ordem de leitura, o que significa que espera-se que um comando só seja executado quando o precedente acima dele termina sua execução. Esse método sequencial de programação reforça a proposta de simplicidade da plataforma Arduino. 
 \par Como estudo de caso tenhamos uma aplicação cujo objetivo é piscar um LED até o momento que o usuário aperte um botão. O Exemplo \ref{orientacaoevento1} apresenta uma implementação simples utilizando as funções disponíveis da plataforma Arduino. O programa executa a rotina de piscar o LED enquanto uma variável de controle indica que o botão nunca foi apertado. Toda iteração, a aplicação checa o estado do botão e, caso esteja apertado, modifica a variável de controle para que a rotina do LED não seja mais executada.
-\begin{lstlisting}[style=CStyle,label=orientacaoevento1,caption=Aplicação não orientada a evento]
+\begin{lstlisting}[style=CStyle,label=orientacaoevento1,caption=Aplicação bloqueante]
 int buttonWasPressed = FALSE;
 void setup() {
   // initialize digital pin LED_BUILTIN as an output.
@@ -371,9 +371,9 @@ void loop() {
   }
 }
 \end{lstlisting}
-\par Embora a estrutura da aplicação seja simples, seu comportamento não é o esperado. Como a aplicação é sequencial, a checagem do estado do botão só ocorre uma vez que toda a rotina de piscar o LED uma vez foi executada. Caso o usuário aperte e solte o botão dentro do intervalo de 2 segundos no qual o LED está piscando, o input será perdido. Inserir checagens no meio da rotina de piscar o LED não resolve o problema, já que o botão ainda pode ser apertado e soltado no segundo de execução tomado pelas chamadas à função bloqueante delay(). Além disso, a aplicação seria mais eficiente se o microcontrolador estrasse em um estado de baixo consumo de energia durante os momentos em que está aguardando a passagem do tempo. O uso da função delay(), por ser implementada com polling, faz com que o microcontrolador desperdiçe recursos durante esse tempo de espera.
-\par Para que o comportamento responsivo desejado seja obtido, é necessário não utilizar a função bloqueante para a contagem do tempo. O exemplo \ref{orientacaoevento2} a seguir propõe essa abordagem.
-\begin{lstlisting}[style=CStyle,label=orientacaoevento2,caption=Aplicação orientada a evento]
+\par Embora a estrutura da aplicação seja simples, seu comportamento não é o esperado. Como a aplicação é sequencial, a checagem do estado do botão só ocorre uma vez que toda a rotina de piscar o LED foi executada. Caso o usuário aperte e solte o botão dentro do intervalo de 2 segundos no qual o LED está piscando, o input será perdido. Inserir checagens no meio da rotina de piscar o LED não resolve o problema, já que o botão ainda pode ser apertado e soltado no segundo de execução tomado pelas chamadas à função bloqueante delay(). Além disso, a aplicação seria mais eficiente se o microcontrolador estrasse em um estado de baixo consumo de energia durante os momentos em que está aguardando a passagem do tempo. O uso da função delay(), por ser implementada com polling, faz com que o microcontrolador desperdice recursos durante esse tempo de espera.
+\par Para que o comportamento responsivo desejado seja obtido, é necessário não utilizar a função bloqueante para a contagem do tempo. O Exemplo \ref{orientacaoevento2} a seguir propõe essa abordagem.
+\begin{lstlisting}[style=CStyle,label=orientacaoevento2,caption=Aplicação não bloqueante]
 int ledState = LOW;             // ledState used to set the LED
 int buttonWasPressed = FALSE;
 
@@ -408,71 +408,63 @@ void loop() {
   }
 }
 \end{lstlisting}
-\par Embora o comportamento da aplicação esteja correto, perdemos a simplicidade proposta pelo exemplo \ref{orientacaoevento1}. Mais variáveis de controle foram necessárias no código e a legibilidade é prejudicada. Essa abordagem também não resolve a questão do desperdício de recursos, visto que embora não realizemos o polling da implementação da função delay, estamos contantemente checando o estado do botão e da passagem do tempo, o que também caracteriza polling.
-\par Com o uso de interrupções, podemos nos livrar da ineficiência. No exemplo \ref{interrupcao1} uma interrupção se encontra atrelada ao pressionamento do botão. Deste modo a aplicação fica livre da checagem e pode entrar em um modo de baixo consumo.
-
-\par Vemos portanto que a utilização de linguagens procedurais, como C, para programação em sistemas embarcados, embora bem difundida, sofre com a dificuldade de implementarem a orientação a eventos de forma concisa e clara. Conforme a complexidade e a necessidade de responsividade a estímulos externos crescem, mais variáveis de controle são necessárias e aplicações simples se convertem em pedaços de código de difícil interpretação. 
-\par (SObre interrupções)Além Quando aumentamos a complexidade e possuímos mais eventos na aplicação, a legibilidade do código piora mais ainda. 
-\par De um ponto de vista mais funcional, o código também desperdiça ciclos computacionais pelo volume de verificações. O evento é verificado frequentemente para que o sistema permaneça responsivo, sacrificando ciclos pelas verificações que falham, em um exemplo de polling. Outro problema causado por este modelo é que, no caso de um sistema mais complexo, manter a responsividade se torna inviável, já que o bloco iterado pela aplicação cresce e os intervalos entre verificações de cada evento crescem. O uso de interrupções faz um bom papel de amenizar a questão da responsividade. No Exemplo \ref{interrupcao1} possuímos um código que atinge o mesmo resultado dos Exemplos \ref{orientacaoevento1} e \ref{orientacaoevento2}, porém fazendo o uso de interrupções. A aplicação faz uso de um timer interno ao microcontrolador para gerar uma interrupção a cada um segundo. Cada vez que a interrupção ocorre, a aplicação executa um bloco de código associado à interrupção, uma função de callback. Essa função configura o valor de uma variável que marca o acontecimento do evento. No bloco principal da aplicação, o valor desta variável é checado para se detectar o acontecimento do evento e realizar a ação correspondente, que neste caso é inverter o valor do LED.
-\par Neste exemplo o sistema fica mais responsivo pois o bloco principal só consulta o valor da variável. O problema de desperdício de ciclos permanece, porém, já que a consulta à variável permanece, caracterizando polling novamente. O código também não é claro já que o entendimento depende da compreensão da interrupção e de como as duas sessões do código (callback da interrupção e consulta no bloco principal) interagem.
-
+\par Embora o comportamento da aplicação esteja correto, perdemos a simplicidade refletida no Exemplo \ref{orientacaoevento1}. Mais variáveis de controle foram necessárias no código e a legibilidade é prejudicada. Essa abordagem também não resolve a questão do desperdício de recursos, visto que embora não realizemos o polling da implementação da função delay, estamos constantemente checando o estado do botão e da passagem do tempo, o que também caracteriza polling.
+\par Com o uso de interrupções, podemos nos livrar da ineficiência. No Exemplo \ref{interrupcao1} uma interrupção se encontra atrelada ao pressionamento do botão. Deste modo a aplicação fica livre da checagem e pode entrar em um modo de baixo consumo com uma chamada a sleep(). Embora o desperdício de ciclos agora seja evitado, a necessidade de variáveis de controle, e a complexidade decorrente, ainda permanece.
 \begin{lstlisting}[style=CStyle,label=interrupcao1,caption=Aplicação utilizando interrupção]
-#define ledPin 13
-volatile bool timerEvent = FALSE;
-void setup()
+volatile int buttonWasPressed = FALSE;
+
+int ledState = LOW;             // ledState used to set the LED
+
+void onButtonPress()
 {
- pinMode(ledPin, OUTPUT);
-
- // initialize timer1 
- noInterrupts();    // disable all interrupts
- TCCR1A = 0;
- TCCR1B = 0;
-
- TCNT1 = 3036;    // preload timer 65536-16MHz/256/1Hz
- TCCR1B |= (1 << CS12);    // 256 prescaler 
- TIMSK1 |= (1 << TOIE1);   // enable timer overflow interrupt
- interrupts();    // enable all interrupts
-  
- Serial.begin(9600);
+  buttonWasPressed = TRUE;
 }
 
-ISR(TIMER1_OVF_vect)
+void setup()
 {
- timerEvent = TRUE;
+ pinMode(LED_BUILTIN, OUTPUT);
+ attachInterrupt(digitalPinToInterrupt(BUTTON_PIN), &onButtonPress, RISING);
 }
 
 void loop()
 {
- if(timerEvent){
-  timerEvent = FALSE;
-  digitalWrite(ledPin, digitalRead(ledPin)^1);
- }
+  sleep(1000);
+  if (!buttonWasPressed) {
+    // if the LED is off turn it on and vice-versa:
+    if (ledState == LOW) {
+      ledState = HIGH;
+    } else {
+      ledState = LOW;
+    }
+
+    // set the LED with the ledState of the variable:
+    digitalWrite(LED_BUILTIN, ledState);
+  }
 }
 \end{lstlisting}
-\subsection{Céu}
-\tab Céu é uma linguagem síncrona reativa estruturada desenvolvida na PUC-Rio. A semântica de Céu permite ao usuário escrever uma aplicação reativa orientada a eventos contendo paralelismo de forma determinística e clara. A compilação de um programa em Céu consiste na transcrição do código para seu equivalente em C para então ser compilado no compilador C de escolha, gerando o executável final. Devido à portabilidade de código C, Céu se prova uma linguagem portável e de variável uso. A linguagem se destaca em aplicações que envolvem coordenação com eventos externos, como GUIs, jogos e, mais relevante para este trabalho, sistemas embarcados.
+\par\par Vemos portanto que a utilização de linguagens procedurais, como C, para programação em sistemas embarcados, embora bem difundida, sofre com a dificuldade de implementarem a orientação a eventos de forma concisa e clara. Conforme a complexidade e a necessidade de responsividade a estímulos externos crescem, mais variáveis de controle são necessárias e aplicações simples se convertem em pedaços de código de difícil interpretação. A proposta de simplicidade decorrente da programação sequencial, portanto, se mostra ilusória.
+\subsection{Céu-Arduino}
+\tab Céu é uma linguagem síncrona reativa estruturada desenvolvida na PUC-Rio. A proposta da linguagem é resolver os desafios descritos acima apresentados pelas linguagens procedurais. A semântica de Céu permite ao usuário escrever uma aplicação reativa orientada a eventos de forma determinística e clara, reduzindo o uso de variáveis de controle. A linguagem expressa a diferenciação lógica entre rotinas que executam sequencialmente e paralelamente.
 \par O foco da linguagem na orientação a eventos se dá pelas primitivas de aguardar um evento ("await") e emitir um evento ("emit"). Eventos em Céu podem ser tanto internos, emitidos pelo programa para coordenação, como externos, como timers e I/O.
-\par Céu possuiu primitivas para expressar blocos de código que devem rodar em paralelo (par, par/or, par/and). A execução desses blocos, chamados de trilhas, deve incluir ao menos uma espera de um evento, expressado por uma diretiva da linguagem. Ao bloquear à espera de um evento a outra trilha em paralelo pode executar. Esse modelo permite que os dois blocos de código executem se intercalando porém sem concorrência, dado que todo trecho de código delimitado por esperas a eventos (as trilhas) executam sem preempção. A semântica de Céu assume que o tempo de execução das trilhas é imediato se comparado com a frequência dos eventos. Caso esta diretiva seja respeitada, a aplicação permanece reativa.
-\par O processo de compilação de Céu permite que trechos de código em C possam ser executados no programa, o que facilita a execução de comandos não previstos ou contidos em Céu. Para que um programa em Céu possa interagir com o sistema desejado, basta que uma camada de ambiente seja implementada para que eventos externos possam ser captados e que a emissão de eventos externos possa ser interpretada pelo sistema alvo.
-\par No Exemplo \cite(ceu1), a aplicação em Céu executa dois blocos em paralelo (explicitado pela primitiva par do ... with ... end). O primeiro bloco aguarda um evento de passagem  de tempo, neste caso 1 segundo, para então imprimir uma mensagem na tela. O segundo bloco aguarda um evento de pressionamento de tecla, presumidamente implementado pela camada do ambiente, para em sequência imprimir uma mensgaem correspondente. O comportamento resultante é que a mensagem de tempo passado será impressa na tela a cada segundo independente do pressionamento da tecla, que irá imprimir a mensagem a cada pressionamento. 
+\par A linguagem expressa a diferenciação lógica entre rotinas que executam sequencialmente e paralelamente. Céu possuiu primitivas para expressar blocos de código que devem rodar em paralelo (par, par/or, par/and). A execução desses blocos, chamados de trilhas, deve incluir ao menos uma espera de um evento, expressado por uma diretiva da linguagem. Ao bloquear à espera de um evento a outra trilha em paralelo pode executar. Esse modelo permite que os dois blocos de código executem se intercalando porém sem concorrência, dado que todo trecho de código delimitado por esperas a eventos (as trilhas) executam sem preempção. A semântica de Céu assume que o tempo de execução das trilhas é imediato se comparado com a frequência dos eventos. Caso esta diretiva seja respeitada, a aplicação permanece reativa.
+\par O Exemplo \ref{ceu1} a seguir implementa a mesma aplicação dos exemplos anteriores em C.  
 \begin{lstlisting}[style=CStyle,label=ceu1,caption=Aplicação em Céu que imprime mensagem cada segundo]
-input int KEY;
-par do
+par/or do
     loop do
         await 1s;
-        {
-            printf("1 second has passed!\n");
-        }
+        emit LED_PIN(on);
+        await 1s;
+        emit LED_PIN(off);
     end
 with
-    loop do
-        await KEY;
-        {
-            printf("Key was pressed!\n");
-        }
-    end
+    await BUTTON_PRESS;
 end
 \end{lstlisting}
+\par O código define dois blocos para executarem em paralelo. O primeiro bloco de código consiste em um loop que pisca o LED, aguardando o evento de passagem de 1 segundo representado pela primitiva await de Céu. O segundo bloco aguarda o evento de pressionamento do botão. O qualificador "or" utilizado com a primitiva "par" expressa que, caso um dos blocos em paralelo termine sua execução, todos os outros blocos são abortados e a aplicação segue seu fluxo. Isso significa que caso o botão seja apertado, a rotina rodando em paralelo, neste caso a de piscar o LED, é abortada. Como não há mais comandos a serem executados, a aplicação termina sua execução.
+\par O comportamento reativo de implementação complexa do Exemplo \ref{orientacaoevento2} é reproduzido aqui de forma clara e estruturalmente simples, como proposto pelo Exemplo \ref{orientacaoevento1}.
+\par A compilação de um programa em Céu consiste na transcrição do código para seu equivalente em C para então ser compilado no compilador C de escolha, gerando o executável final. Isso torna possível utilizar o compilador da plataforma Arduino e desenvolver programas em Céu para os microcontroladores Arduino. Basta que uma camada de ambiente seja implementada para que eventos externos possam ser captados, como o pressionamento do botão, e que a emissão de eventos externos possa ser interpretada, como ligar e desligar o LED. Esta camada de ambiente se encontra desenvolvida e é parte do kite de desenvolvimento Céu-Arduino mantido pelos responsáveis pela linguagem Céu.
+\par A camada de ambiente permite que os eventos de entrada possam ser implementados utilizando interrupções. No caso do Exemplo \ref{ceu1}, basta que a interrupção atrelada ao pino dispare o evento BUTTON_PRESS para que a aplicação possua a eficiência proposta pelo Exemplo \ref{orientacaoevento3}.
+\par Contribuimos para esta camada de ambiente neste projeto com os drivers que desenvolvemos, de módulos da plataforma Arduino, utilizando interrupções, de forma a enriquecer o kit.
 \subsection{Céu-Arduino}
 
 \par O kit de desenvolvimento Céu-Arduino apresenta uma abordagem única para o desenvolvimento
