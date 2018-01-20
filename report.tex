@@ -1,7 +1,7 @@
 \documentclass{article}
 %\usepackage{enumitem}
 \usepackage[table]{xcolor}
-\usepackage{listings}
+\usepackage{listings,multicol}
 \usepackage{amsfonts}
 \usepackage{latexsym}
 \usepackage{fullpage}
@@ -466,173 +466,159 @@ end
 \par A camada de ambiente permite que os eventos de entrada possam ser implementados utilizando interrupções. No caso do Exemplo \ref{ceu1}, basta que a interrupção atrelada ao pino dispare o evento BUTTON\textunderscore PRESS para que a aplicação possua a eficiência proposta pelo Exemplo \ref{interrupcao1}.
 \par Contribuimos para esta camada de ambiente neste projeto com os drivers que desenvolvemos, de módulos da plataforma Arduino, utilizando interrupções, de forma a enriquecer o kit.
 \section{Drivers}
-\tab O microcontrolador AtMega328p possuiu funcionalidades e módulos embarcados. A platadorma Arduino disponibiliza drivers em C para esses módulos que, apesar do hardware suportar interrupções, utiliza polling. Partimos do estudo de tais drivers em C e do hardware para produzirmos versões em Céu que utilizem interrupção e, assim, oferecem as vantagens já descritas para o desenvolvimento de aplicações. As soluções desenvolvidas neste projeto se encontram disponíveis no repositório open-source do kit Céu-Arduino.
-\par O processo de desenvolvimento que realizamos consistiu em, primeiramente, estudar o ambiente. Isso envolveu entender o hardware do módulo e seus limites, principalmente em relação a interrupções. Esclarecer em quais momentos o hardware opera sem necessidade de interferência do software indica onde a aplicação poderá entrar em modo de espera, sendo acordado pela interrupção. Esse processo, acompanhado do estudo da implementação já existente dos drivers bloqueantes disponibilizados, permite identificar onde o bloqueio desnecessário do driver, o polling, ocorre, e como ele pode ser evitado.
+\tab O microcontrolador AtMega328p possuiu funcionalidades e módulos embarcados. A platadorma Arduino disponibiliza drivers em C para esses módulos que, apesar do hardware suportar interrupções, utiliza polling. Partimos do estudo de tais drivers em C e do hardware para produzirmos versões em Céu que utilizem interrupção e, assim, oferecem as vantagens já descritas para o desenvolvimento de aplicações. As soluções desenvolvidas neste projeto se encontram disponíveis no repositório open-source do kit Céu-Arduino. Para que o driver fosse implementado, foi necessário um estudo não só da plataforma Arduino e do microcontrolador, mas também do ambiente de desenvolvimento disponibilizado pela Arduino e das bibliotecas já implementadas e disponibilizadas em Céu, principalmente as de Céu-Arduino.
+\par Todo o código desenvolvido neste projeto segue a intenção de priorizar simplicidade e rapidez na execução, respeitando os requisitos de um módulo suficientemente robusto e funcional. De talmodo, os drivers desenvolvidos atenderão somente a plataforma Arduino Uno, por ser a mais utilizada e disponível, além de possuírem limitações que podem vir a exigir atenção e responsabilidade do usuário final no uso dos drivers em aplicações. O motivo é a busca por uma melhor utilização do tempo do projeto e redução da carga computacional para a execução dos drivers.
+\par O ambiente de desenvolvimento que usa a linguagem C é o mesmo tanto para Arduino quanto para Céu-Arduino. Isto é, ambos os códigos são em alguma etapa compilados utilizando o mesmo compilador. Esse compilador é disponibilizado pela AVR e é uma versão customizada de GCC, chamada de AVR-GCC. Em conjunto com o compilador, são utilizadas bibliotecas da AVR que tratam da abstração do hardware, como acesso a registradores, para variados chips da Atmel, incluindo o AtMega328p, presente no Arduino Uno, plataforma para qual os drivers deste projeto são destinados.
+\par Outra ferramenta essencial para o andamento do projeto foi a capacidade de se registrar rotinas de serviço a interrupções (Interrupt Service Routines, ISR), que são rotinas de código associadas a interrupções do microcontrolador. Em outras palavras, quando o hardware emite uma interrupção, osoftware executaria a ISR atrelada àquela interrupção. AVR disponibiliza uma biblioteca de tratamento de interrupções que torna simples a implementação de tais ISRs.
+\par Atmel disponibiliza um documento detalhado \cite{wortmann2015} das especificações do microcontrolador presente no Arduino Uno, o AtMega328p. Esse documento, chamado datasheet, possui a definição de todas as funcionalidades e hardwares dedicados presentes, incluindo a definição e descrição dos registradores responsáveis e atrelados a cada um. Esse documento é vital para o entendimento das capacidades e limitações do chip e, principalmente, o de como operá-lo.
+\par A datasheet está no centro da primeira etapa do desenvolvimento que realizamos, que é estudar o funcionamento do hardware para que, em conjunto com o estudo do código da implementação atual (se existente), seja possível compreender o comportamento de uma API tradicional. O foco desse passo é criar uma base de conhecimento sobre as informações já disponíveis acerca do módulo, principalmente em relação a interrupções. Esclarecer em quais momentos o hardware opera sem necessidade de interferência do software indica onde a aplicação poderá entrar em modo de espera, sendo acordado pela interrupção. Esse processo, acompanhado do estudo da implementação já existente dos drivers bloqueantes disponibilizados, permite identificar onde o bloqueio desnecessário do driver, o polling, ocorre, e como ele pode ser evitado.
 \par Com o conhecimento do suporte a interrupção e a identificação do bloqueio, pudemos modificar o driver para que não seja mais bloqueante. A função que realizava a operação por completo, se divide em funções que iniciam a operação, funções que consultam o estado da operação e, caso necessário, funções que finalizam a operação. Isso torna possível que a aplicação possa realizar outras operações entre consultas ao estado, o que na chamada bloqueante não era possível. Utilizar interrupções permite que o hardware entre em um modo de baixo consumo e seja acordado pela interrupção, contribuindo para a eficiência da solução no uso de recursos.
 \par O passo final foi, com o driver não bloqueante em C em mãos, convertê-lo para Céu. As funções são transformadas em eventos de entrada e saída. Expressamos o início de uma operação no hardware por parte da aplicação como a emissão de um evento de saída. Ao finalizar a operação, o driver emite um evento de entrada, o qual a aplicação pode aguardar com await. Deste modo fica explícito no bloco de código que o programa emite uma requisição ao módulo e aguarda sua resposta, podendo realizar tarefas no meio tempo de forma clara devido ao paralelismo da linguagem. Quando maior complexidade era necessária, abstrações da linguagem foram usadas.
-\par Escolhemos módulos que causam maior impacto devido à frequência de sua utilização em aplicações de sistemas embarcados. As escolhas foram o conversor analógico para digital que possibilita realizar leituras analógicas e a interface SPI. 
-\subsection{Analog}
-\tab Como primeira etapa do projeto foram definidos os módulos para os quais implementações não-
-bloqueantes em Céu serão desenvolvidas. Os módulos são Entrada e Saída Analógica (Analog
-I/O), Comunicação SPI (SPI), Comunicação Serial (Serial), Suporte a RTC Externo
-(External RTC) e Operações na EEPROM (EEPROM). Os módulos foram descritos na ordem
-estimada de dificuldade crescente.
-\par O realizado dentro desta primeira etapa do projeto girou em torno do desenvolvimento de um dos
-módulos. Para que o driver fosse implementado, foi necessário um estudo não só da plataforma
-Arduino e do microcontrolador, mas também do ambiente de desenvolvimento disponibilizado pela
-AVR e das bibliotecas já implementadas e disponibilizadas em Céu, principalmente as de Céu-
-Arduino.
-\par Todo o código desenvolvido neste projeto segue a intenção de priorizar simplicidade e rapidez na
-execução, respeitando os requisitos de um módulo suficientemente robusto e funcional. De tal
-modo, os drivers desenvolvidos atenderão somente a plataforma Arduino Uno, por ser a mais
-utilizada e disponível, além de possuírem limitações que podem vir a exigir atenção e
-responsabilidade do usuário final no uso dos drivers em aplicações. O motivo é a busca por uma
-melhor utilização do tempo do projeto e redução da carga computacional para a execução dos drivers.
-\par Ao final desta etapa, o projeto se encontra com um driver já desenvolvido e em uma versão estável.
-Tal módulo servirá como base para que o processo de desenvolvimento possa ser reproduzido para
-os demais drivers. A explicação de cada etapa nesta sessão do relatório virá acompanhada do exemplo
-prático da implementação referente ao módulo. Deste modo, o processo será descrito assim como o
-desenvolvimento do driver.
-\par O módulo desenvolvido nesta primeira etapa do projeto é o de leitura e emissão de valores de
-voltagem analógicos. A referência para este módulo no texto daqui em diante será “Analog I/O”,
-significando “Entrada e Saída Analógica”.
+\par Escolhemos módulos que causam maior impacto devido à frequência de sua utilização em aplicações de sistemas embarcados. As escolhas foram Entrada e Saída Analógica (Analog I/O) e Comunicação SPI (SPI).
+\subsection{Analog I/O}
+\tab Foi levantado que as funcionalidades de entrada (leitura de valor analógico) e saída (emissão de valor analógico) são atreladas a hardwares dedicados distintos no microcontrolador. Enquanto os valores de saída analógicos são simulados utilizando ondas PWM (o pino liga e desliga em intervalos regulares, onde o valor analógico seria a razão entre o tempo que permanece ligado e o tempo que permanece desligado). Essa funcionalidade já se encontrava implementada em Céu e, portanto, não foi abordada.
+\par Os valores de leitura, em outra mão, são obtidos por um hardware de Conversão Analógica para Digital (ADC). Esse componente dedicado recebe um valor de voltagem analógico e, após ciclos de processamento, guarda em seus registradores a representação de 10 bits deste valor, quando comparado a uma referência de valor máximo. Em outras palavras, se a voltagem de entrada for o ground, o resultado será “0”. Caso seja igual ou acima da voltagem de referência, será 1023. 
+\par Embora existam mais de um pino de leitura analógico no microcontrolador, existe somente um hardware de ADC. Para que possa atender a todos os seis pinos, o hardware conta com um multiplexador que seleciona o pino para qual a leitura deve ser feita. Repare que não é possível ter mais de um pino tendo seu valor lido pelo hardware ao mesmo tempo. 
+\par Para efetuar uma conversão, o multiplexador, cujo valor é controlado por um registrador modificável pelo desenvolvedor, deve receber o valor do pino para qual a leitura será feita. Do mesmo modo, os outros valores de configuração devem ser setados de acordo com a configuração desejada. Para iniciar a conversão, basta que o software escreva o valor lógico 1 no bit do registrador especificado. Esse bit terá seu valor 1 mantido pelo hardware enquanto a conversão está em progresso, e será zerado no momento que a conversão tiver fim e o resultado estiver disponível. Caso o hardware seja configurado para habilitar interrupção, a ISR será chamada no fim da conversão. O software pode então ler o registrador que guarda o valor final da conversão e a operação terá terminado.
+\tab A implementação atual de uma função bloqueante de leitura analógica, presente na biblioteca de funções disponibilizada pela Arduino, possui como único argumento o pino para qual a conversão deve ser feita, devolvendo o resultado da mesma. Sua implementação pode ser vista abaixo.
+\begin{lstlisting}[style=CStyle,label=analogblock,caption=Leitura analógica bloqueante]
+int analogRead(uint8_t pin) {
+	uint8_t low, high;
 
-\paragraph{Estudo do Ambiente}
+	ADMUX = (analog_reference << 6) | (pin & 0x07);
 
-\tab O ambiente de desenvolvimento que usa a linguagem C é o mesmo tanto para Arduino quanto para
-Céu-Arduino. Isto é, ambos os códigos são em alguma etapa compilados utilizando o mesmo
-compilador. Esse compilador é disponibilizado pela AVR e é uma versão customizada de GCC,
-chamada de AVR-GCC. Em conjunto com o compilador, são utilizadas bibliotecas da AVR que
-tratam da abstração do hardware, como acesso a registradores, para variados chips da Atmel, incluindo
-o AtMega328p, presente no Arduino Uno, plataforma para qual os módulos deste projeto são
-destinados.
-\par Outra ferramenta essencial para o andamento do projeto é a capacidade de se registrar rotinas de
-serviço a interrupções (Interrupt Service Routines, ISR), que são rotinas de código associadas a
-interrupções do microcontrolador. Em outras palavras, quando o hardware emite uma interrupção, osoftware executaria a ISR atrelada àquela interrupção. AVR disponibiliza uma biblioteca de tratamento
-de interrupções que torna simples a implementação de tais ISRs.
-\par Para Analog I/O, isso significa que teremos fácil acesso a quaisquer registradores atrelados ao
-módulo, e o acesso ao hardware ficará transparente para o desenvolvedor, que irá tratar os
-registradores como vetores de bits. Como será mencionado posteriormente, isso procede tanto para
-o ambiente de desenvolvimento C quanto o ambiente Céu.
-\par AVR disponibiliza um documento detalhado \cite{wortmann2015} das especificações do microcontrolador presente no
-Arduino Uno, o AtMega328p. Esse documento, chamado datasheet, possui a definição de todas as
-funcionalidades e hardwares dedicados presentes, incluindo a definição e descrição dos registradores
-responsáveis e atrelados a cada um. Esse documento é vital para o entendimento das capacidades e
-limitações do chip e, principalmente, o de como operá-lo.
-\par A datasheet está no centro da primeira etapa do desenvolvimento, que é estudar o funcionamento do
-hardware para que, em conjunto com o estudo do código da implementação atual (se existente), seja
-possível compreender o comportamento de uma API tradicional. O foco desse passo é criar uma
-base de conhecimento sobre as informações já disponíveis acerca do módulo.
-\par Durante essa etapa no desenvolvimento do Analog I/O, foi levantado que as funcionalidades de
-entrada (leitura de valor analógico) e saída (emissão de valor analógico) são atreladas a hardwares
-dedicados distintos no microcontrolador. Enquanto os valores de saída analógicos são simulados
-utilizando ondas PWM (o pino liga e desliga em intervalos regulares, onde o valor analógico seria a
-razão entre o tempo que permanece ligado e o tempo que permanece desligado). Essa funcionalidade
-já se encontra implementada em Céu e, portanto, não é pertinente para os efeitos deste relatório.
-\par Os valores de leitura, em outra mão, são obtidos por um hardware de Conversão Analógica para
-Digital (ADC). Esse componente dedicado recebe um valor de voltagem analógico e, após ciclos de
-processamento, guarda em seus registradores a representação de 10 bits deste valor, quando
-comparado a uma referência de valor máximo. Em outras palavras, se a voltagem de entrada for o
-ground, o resultado será “0”. Caso seja igual ou acima da voltagem de referência, será 1023.
-\par Embora existam mais de um pino de leitura analógico no microcontrolador, existe somente um
-hardware de ADC. Para que possa atender a todos os seis pinos, o hardware conta com um
-multiplexador que seleciona o pino para qual a leitura deve ser feita. Repare que não é possível ter
-mais de um pino tendo seu valor lido pelo hardware ao mesmo tempo. O valor desse multiplexador se
-encontra em um dos registradores ao qual o desenvolvedor possui acesso e, portanto, seu valor pode
-ser modificado facilmente. Além do multiplexador, o usuário possui acesso a vários valores que
-servem como configuração do ADC. Dentre esses valores, o de Analog to Digital Interrupt
-Enable (ADIE) é de elevado interesse ao projeto, já que quando este bit, presente no registrador de
-configuração ADCSRA, se encontra “setado” (valor lógico 1), o hardware dispara uma interrupção
-toda vez que uma conversão termina.
-\par Em resumo, para efetuar uma conversão, o multiplexador, cujo valor é controlado pelo registrador
-ADMUX, deve receber o valor do pino para qual a leitura será feita. Do mesmo modo, os outros
-bits de configuração devem ser setados de acordo com a configuração desejada pelo usuário. Para
-iniciar a conversão, basta que o software escreva o valor lógico 1 no bit ADSC. Esse bit terá seu valor
-1 mantido pelo hardware enquanto a conversão está em progresso, e será zerado no momento que a
-conversão tiver fim e o resultado estiver disponível. Os nomes técnicos dos bits e registradores serão
-referenciados no texto quando descrevendo a implementação.
+	// start the conversion
+	sbi(ADCSRA, ADSC);
 
-\paragraph{Implementação Intermediária}
+	// ADSC is cleared when the conversion finishes
+	while (bit_is_set(ADCSRA, ADSC));
 
-\tab A implementação atual de uma função de leitura analógica, presente na biblioteca de funções
-disponibilizada pela Arduino, possui como único argumento o pino para qual a conversão deve ser
-feita, devolvendo o resultado da mesma.
-\par A função configura os registradores do hardware, incluindo ADMUX, cujo valor terá como base o
-argumento de entrada da função. Em seguida, inicia a conversão escrevendo o lógico 1 em ADSC.
-Para aguardar o fim da conversão, o código faz polling em ADSC. Como já discutido, isso caracteriza
-o motivo da aplicação apresentar um comportamento bloqueante, e é o que o projeto visa eliminar.
-Após ADSC ter sido zerado pelo hardware, a função segue sua execução e retorna o valor do
-resultado.
-\par Após a funcionalidade ter sido estudada do ponto de vista do hardware e do software (caso este seja
-disponível), a causa do comportamento bloqueante da aplicação deverá ter sido identificada e uma
-solução idealizada. Essa solução pode ter como base a capacidade do hardware de gerar interrupções
-ou quaisquer outros métodos para que não seja necessário à aplicação consultar o hardware, e sim
-cadastrar um call-back para que o modelo de Céu funcione.
-\par Com base na solução, deverá ser implementada uma API na linguagem de escolha. No âmbito deste
-projeto, essa linguagem será C. Embora possa não se assemelhar com a implementação final, essa
-solução intermediária deve apresentar contribuições claras ao código final, mesmo que na forma de
-aprendizado.
-\par A implementação em C do driver para gerenciar o ADC buscou eliminar o polling encontrado (descrito
-na última sessão) utilizando a capacidade do módulo de emitir uma interrupção quando a conversão
-for concluída e o registro de uma ISR atrelada a essa interrupção utilizando as utilidades
-disponibilizadas pela AVR.
-\par A implementação nova reaproveita a implementação original, modificando a lógica do polling.
-Enquanto a original possuía apenas uma função que encapsulava todo o processo de leitura, desde a
-configuração do hardware dedicado até o retorno do valor, a API nova é dividida em três funções, que
-contam com o suporte de uma ISR atrelada à interrupção do ADC e uma variável global que guarda
-o estado de uma conversão.
-\par A primeira função é equivalente à função de leitura da implementação original até o momento do
-início da conversão, isto é, ela termina quando ADSC recebe o valor lógico 1. Entretanto ela
-configura ADIE para que as interrupções ocorram, algo que não estava previsto na implementação
-da Arduino. Essa função altera o valor da variável de estado para que esta reflita que uma conversão
-está em andamento.
-\par A segunda função é utilizada para consultar a variável de estado de modo a saber se uma conversão
-está acontecendo. Isso é necessário pois caso esteja, os valores contidos nos registradores que
-guardam o resultado da conversão podem não ser verdadeiros.
-\par A terceira função é equivalente à parte final da função da implementação original, após o polling. Ela
-simplesmente retorna o resultado da conversão contido nos registradores.
-\par A ISR atrelada à interrupção do ADC altera o valor da variável de estado para refletir que uma
-interrupção terminou.
-\par Para efetuar uma leitura de um valor analógico utilizando esta API, o usuário deve chamar a primeira
-função para iniciar a conversão e, depois que a segunda função retorne um valor negativo
-(representando que uma conversão não está em progresso), chamar a terceira função para obter o
-resultado.
+	low  = ADCL;
+	high = ADCH;
 
-\paragraph{Implementação Final}
+	// combine the two bytes
+	return (high << 8) | low;
+}
+\end{lstlisting}
+\begin{lstlisting}[style=CStyle,label=analogblockapp,caption=Aplicação utilizando driver bloqueante]
+void setup(){
+    pinMode(SENSOR_PIN,INPUT);
+    pinMode(LED_BUILTIN,OUTPUT);
 
-\tab A linguagem Céu permite uma forte integração com C, sendo capaz de chamar funções e acessar
-variáveis declaradas e contidas no contexto C. Isso permite que parte da implementação mínima
-viável seja reutilizado no desenvolvimento da versão da API em Céu. O ambiente também permite a
-declaração de ISRs, o que torna possível reproduzir a API em C dentro do ambiente Céu desde o
-primeiro momento.
-\par A vantagem de Céu é a modelagem orientada a eventos, o que permite que a API execute baseada
-em call-backs, contribuindo para a eliminação do desperdício dos ciclos (que eram utilizados para
-checar se a API e encontrava em um estado que permitia a próxima ação). Este passo no
-desenvolvimento deve ser utilizado para modelar a solução concebida nos passos anteriores de forma
-que utilize as vantagens de Céu a favor da economia de ciclos, implementando a estrutura de
-orientação a eventos prevista no modelo Céu.
-\par Nesta etapa do desenvolvimento do módulo ADC, a obtenção do resultado da conversão foi
-modelada como um evento emitido pelo driver. Deste modo, a API consiste na requisição de uma
-conversão por parte da aplicação e da emissão, por parte da API, de um evento que carrega o
-resultado.
-\par Após ter a API modelada em Céu, o desenvolvedor possuiu todas as ferramentas para produzir a
-solução final. Deve-se buscar tirar o máximo de proveito possível do trabalho realizado nas etapas
-anteriores.
-\par A implementação em Céu do módulo ADC constituiu ter uma função que iniciava uma conversão,
-função esta que foi reaproveitada da API em C. Como a própria API será responsável por emitir o
-resultado quando a conversão terminar, não há necessidade de manter uma variável de estado. Basta
-que, na ISR, o resultado seja obtido utilizando a função implementada no passo anterior e que este
-valor seja enviado à aplicação na forma de um evento. Todo o controle de estados do driver é
-encapsulado pelo próprio modelo de Céu e o fluxo de execução.
-\par Para efetuar uma conversão, a aplicação, agora em Céu, deve requisitar uma conversão e “aguardar”
-o evento resultado. Como previsto no ambiente Céu, enquanto a aplicação está “aguardando” o
-evento, o microcontrolador fica livre para executar outras linhas de código pendentes ou, caso
-nenhuma exista, entrar em um estado de baixo consumo de energia. Quando o hardware concluir a
-conversão, o evento emitido irá “acordar” a aplicação, que seguirá seu fluxo. No caso da
-implementação original, a aplicação não poderia fazer uso desse tempo de “aguarde” pois estaria
-bloqueada consultando o driver para saber se a conversão já havia terminado. O contraste entre as
-duas aplicações e, por consequência, o contraste entre as duas APIs ficam claros.
+    Serial.begin(9600);
+}
+void loop(){
+    int value = analogRead(SENSOR_PIN);
+    Serial.println(value);
+}
+\end{lstlisting}
+\par A função configura os registradores do hardware e, em seguida, inicia a conversão. Para aguardar o fim da conversão, o código faz polling no bit que representa uma conversão em andamento. Como já discutido, isso caracteriza o motivo da aplicação apresentar um comportamento bloqueante. Após o bit ter sido zerado pelo hardware, a função segue sua execução e retorna o valor do resultado. 
+\par A implementação não-bloqueante que desenvolvemos reaproveita a implementação original, modificando a lógica do polling. Enquanto a original possuía apenas uma função que encapsulava todo o processo de leitura, desde a configuração do hardware dedicado até o retorno do valor, a API nova é dividida em três funções, que contam com o suporte de uma ISR atrelada à interrupção do ADC e uma variável de controle que guarda o estado de uma conversão.
+\begin{lstlisting}[style=CStyle,label=analognonblock,caption=Leitura analógica não-bloqueante]
+void analogRead_begin( uint8_t pin ) {
 
+	ADMUX = ( analog_reference << 6 ) | ( pin & 0x07 );
+
+	//configures interrupt
+	sbi( ADCSRA, ADIE );
+
+	// start the conversion
+	sbi( ADCSRA, ADSC );
+
+	adc_state = ADC_READING;
+}
+
+ISR( ADC_vect ) {
+	adc_state = ADC_DONE;
+}
+
+bool analogRead_available() {
+	return adc_state != ADC_READING;
+}
+
+int analogRead_read() {
+
+	uint8_t low, high;
+
+	low  = ADCL;
+	high = ADCH;
+
+	// combine the two bytes
+	return ( high << 8 ) | low;
+}
+\end{lstlisting}
+\begin{lstlisting}[style=CStyle,label=analognonblockapp,caption=Aplicação utilizando driver não-bloqueante]
+void setup(){
+    pinMode(SENSOR_PIN,INPUT);
+    pinMode(LED_BUILTIN,OUTPUT);
+
+    Serial.begin(9600);
+}
+void loop(){
+    int value = 0;
+    analogRead_begin(SENSOR_PIN);
+    while(!analogRead_available()){
+        doWork(); // or sleep()
+    }
+    value = analogRead_read();
+    Serial.println(value);
+}
+\end{lstlisting}
+\par A primeira função é equivalente à função de leitura da implementação original até o momento do início da conversão, isto é, ela termina quando o bit recebe o valor lógico 1. Entretanto ela configura  o hardware para que as interrupções ocorram, algo que não estava previsto na implementação da Arduino. Essa função altera o valor da variável de estado para que esta reflita que uma conversão está em andamento.
+\par A ISR atrelada à interrupção do ADC altera o valor da variável de estado para refletir que uma interrupção terminou.
+\par A segunda função é utilizada para consultar a variável de estado de modo a saber se uma conversão está acontecendo. Isso é necessário pois caso esteja, os valores contidos nos registradores que guardam o resultado da conversão são indefinidos.
+\par A terceira função é equivalente à parte final da função da implementação original, após o polling. Ela simplesmente retorna o resultado da conversão contido nos registradores.
+\par Para efetuar uma leitura de um valor analógico utilizando esta API, o usuário deve chamar a primeira função para iniciar a conversão e, depois que a segunda função retorne um valor negativo (representando que uma conversão não está em progresso), chamar a terceira função para obter o resultado. A aplicação pode realizar outras atividades entre chamadas à segunda função, o que era impossível na implementação original.
+\par No desenvolvimento do driver em Céu, o início da conversão foi modelado como um evento de saída e a obtenção do resultado da conversão como um evento de entrada emitido pelo driver. Como a própria API é responsável por emitir o resultado quando a conversão terminar, não há necessidade de manter uma variável de estado. 
+\par Para efetuar uma conversão, a aplicação, agora em Céu, deve requisitar uma conversão e “aguardar” o evento resultado. Como previsto no ambiente Céu, enquanto a aplicação está “aguardando” o evento, o microcontrolador fica livre para executar outras linhas de código pendentes ou, caso nenhuma exista, entrar em um estado de baixo consumo de energia. Quando o hardware concluir a conversão, o evento emitido irá “acordar” a aplicação, que seguirá seu fluxo.
+\begin{lstlisting}[style=CStyle,label=analogceu,caption=Aplicação utilizando driver em Céu]
+_Serial.begin(9600);
+par do
+    loop do
+        emit ADC_REQUEST(SENSOR_PIN);
+        var int value = await ADC_DONE;
+        _Serial.println(value);
+    end
+with
+    loop do
+        emit DO_WORK;
+        await WORK_DONE;
+    end
+end
+\end{lstlisting}
+\par Nesse ponto o driver, embora funcional, possui uma limitação. Tenhamos como exemplo uma aplicação onde realizamos duas leituras analógicas em paralelo. Pelo fluxo de execução de Céu, as duas requisições serão realizadas em sequência, e aplicação terá duas trilhas aguardando o mesmo evento, que quando for emitido acordará ambas. O evento de entrada que carrega o valor, entretanto, não diferencia as requisições. Deste modo, o valor recebido por ambas as trilhas será o da última requisição, que sobreescreve a anterior.
+\begin{lstlisting}[style=CStyle,label=analogceutwo1,caption=Aplicação utilizando driver em Céu]
+_Serial.begin(9600);
+par do
+    loop do
+        emit ADC_REQUEST(SENSOR_PIN1);
+        var int value = await ADC_DONE;
+        _Serial.print("PIN1 value:"); _Serial.println(value);
+    end
+with
+    loop do
+        emit ADC_REQUEST(SENSOR_PIN2);
+        var int value = await ADC_DONE;
+        _Serial.print("PIN2 value:"); _Serial.println(value);
+    end
+end
+\end{lstlisting}
+\par Resolvemos esta questão incluindo no driver um vetor contando, para cada pino de leitura analógica, o valor mais recente e um indicador para representar que a conversão está em andamento. um vetor de bit também foi incluído que contém todas as conversões pendentes. Com esta adição o driver, ao terminar uma conversão, pode imediatamente começar a outra com base no vetor de bits. O usuário do driver pode consultar os vetores para garantir que sua conversão terminou e obter o valor final. Como ao final de toda conversão o driver emite um evento, a aplicação pode realizar as consultas de forma eficiente, aguardando o evento antes da consulta. 
+\par Implementamos uma abstração encapsular esse processo de requisição e espera do resultado de forma que o usuário final do driver não precise tomar conhecimento dos vetores. Abaixo segue a mesma aplicação utilizando a abstração, resultando no comportamento desejado.
+\begin{lstlisting}[style=CStyle,label=analogceutwo1,caption=Aplicação utilizando driver em Céu]
+_Serial.begin(9600);
+par do
+    loop do
+        var int value = await Analog(SENSOR_PIN1);
+        _Serial.print("PIN1 value:"); _Serial.println(value);
+    end
+with
+    loop do
+        var int value = await Analog(SENSOR_PIN2);
+        _Serial.print("PIN2 value:"); _Serial.println(value);
+    end
+end
+\end{lstlisting}
 \subsection{SPI}
 
 \paragraph{Estudo do Ambiente}
