@@ -587,7 +587,7 @@ with
 end
 \end{lstlisting}
 \par Nesse ponto o driver, embora funcional, possui uma limitação. Tenhamos como exemplo uma aplicação onde realizamos duas leituras analógicas em paralelo. Pelo fluxo de execução de Céu, as duas requisições serão realizadas em sequência, e aplicação terá duas trilhas aguardando o mesmo evento, que quando for emitido acordará ambas. O evento de entrada que carrega o valor, entretanto, não diferencia as requisições. Deste modo, o valor recebido por ambas as trilhas será o da última requisição, que sobreescreve a anterior.
-\begin{lstlisting}[style=CStyle,label=analogceutwo1,caption=Aplicação utilizando driver em Céu]
+\begin{lstlisting}[style=CStyle,label=analogceutwo1,caption=Duas leituras analógicas concorrentes não suportadas]
 _Serial.begin(9600);
 par do
     loop do
@@ -605,7 +605,7 @@ end
 \end{lstlisting}
 \par Resolvemos esta questão incluindo no driver um vetor contando, para cada pino de leitura analógica, o valor mais recente e um indicador para representar que a conversão está em andamento. um vetor de bit também foi incluído que contém todas as conversões pendentes. Com esta adição o driver, ao terminar uma conversão, pode imediatamente começar a outra com base no vetor de bits. O usuário do driver pode consultar os vetores para garantir que sua conversão terminou e obter o valor final. Como ao final de toda conversão o driver emite um evento, a aplicação pode realizar as consultas de forma eficiente, aguardando o evento antes da consulta. 
 \par Implementamos uma abstração encapsular esse processo de requisição e espera do resultado de forma que o usuário final do driver não precise tomar conhecimento dos vetores. Abaixo segue a mesma aplicação utilizando a abstração, resultando no comportamento desejado.
-\begin{lstlisting}[style=CStyle,label=analogceutwo1,caption=Aplicação utilizando driver em Céu]
+\begin{lstlisting}[style=CStyle,label=analogceutwo1,caption=Duas leituras analógicas concorrentes utilizando a abstração]
 _Serial.begin(9600);
 par do
     loop do
