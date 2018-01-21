@@ -1,4 +1,4 @@
-\documentclass{article}
+\documentclass[11pt]{article}
 %\usepackage{enumitem}
 \usepackage[table]{xcolor}
 \usepackage{listings,multicol}
@@ -16,15 +16,14 @@
 \usepackage{caption}
 \usepackage{subcaption}
 \usepackage[brazilian]{babel}
+\usepackage{fontspec}
+\setmainfont{Arial}
+\usepackage[left=3.5cm, right=3.5cm, top=2.5cm, bottom=2.5cm]{geometry}
+\setlength{\parindent}{1cm}
+\linespread{1.5}
 \lstset{language=C}
 
 \graphicspath{{images/}}
-
-% Default margins are too wide all the way around. I reset them here
-\setlength{\topmargin}{-.5in}
-\setlength{\textheight}{9in}
-\setlength{\oddsidemargin}{.125in}
-\setlength{\textwidth}{6.25in}
 
 \lstset{literate=
   {á}{{\'a}}1 {é}{{\'e}}1 {í}{{\'i}}1 {ó}{{\'o}}1 {ú}{{\'u}}1
@@ -480,7 +479,7 @@ end
 \par Os valores de leitura, em outra mão, são obtidos por um hardware de Conversão Analógica para Digital (ADC). Esse componente dedicado recebe um valor de voltagem analógico e, após ciclos de processamento, guarda em seus registradores a representação de 10 bits deste valor, quando comparado a uma referência de valor máximo. Em outras palavras, se a voltagem de entrada for o ground, o resultado será “0”. Caso seja igual ou acima da voltagem de referência, será 1023. 
 \par Embora existam mais de um pino de leitura analógico no microcontrolador, existe somente um hardware de ADC. Para que possa atender a todos os seis pinos, o hardware conta com um multiplexador que seleciona o pino para qual a leitura deve ser feita. Repare que não é possível ter mais de um pino tendo seu valor lido pelo hardware ao mesmo tempo. 
 \par Para efetuar uma conversão, o multiplexador, cujo valor é controlado por um registrador modificável pelo desenvolvedor, deve receber o valor do pino para qual a leitura será feita. Do mesmo modo, os outros valores de configuração devem ser setados de acordo com a configuração desejada. Para iniciar a conversão, basta que o software escreva o valor lógico 1 no bit do registrador especificado. Esse bit terá seu valor 1 mantido pelo hardware enquanto a conversão está em progresso, e será zerado no momento que a conversão tiver fim e o resultado estiver disponível. Caso o hardware seja configurado para habilitar interrupção, a ISR será chamada no fim da conversão. O software pode então ler o registrador que guarda o valor final da conversão e a operação terá terminado.
-\tab A implementação atual de uma função bloqueante de leitura analógica, presente na biblioteca de funções disponibilizada pela Arduino, possui como único argumento o pino para qual a conversão deve ser feita, devolvendo o resultado da mesma. Sua implementação pode ser vista abaixo.
+\par A implementação atual de uma função bloqueante de leitura analógica, presente na biblioteca de funções disponibilizada pela Arduino, possui como único argumento o pino para qual a conversão deve ser feita, devolvendo o resultado da mesma. Sua implementação pode ser vista abaixo.
 \begin{lstlisting}[style=CStyle,label=analogblock,caption=Leitura analógica bloqueante]
 int analogRead(uint8_t pin) {
 	uint8_t low, high;
@@ -605,7 +604,7 @@ end
 \end{lstlisting}
 \par Resolvemos esta questão incluindo no driver um vetor contando, para cada pino de leitura analógica, o valor mais recente e um indicador para representar que a conversão está em andamento. um vetor de bit também foi incluído que contém todas as conversões pendentes. Com esta adição o driver, ao terminar uma conversão, pode imediatamente começar a outra com base no vetor de bits. O usuário do driver pode consultar os vetores para garantir que sua conversão terminou e obter o valor final. Como ao final de toda conversão o driver emite um evento, a aplicação pode realizar as consultas de forma eficiente, aguardando o evento antes da consulta. 
 \par Implementamos uma abstração encapsular esse processo de requisição e espera do resultado de forma que o usuário final do driver não precise tomar conhecimento dos vetores. Abaixo segue a mesma aplicação utilizando a abstração, resultando no comportamento desejado.
-\begin{lstlisting}[style=CStyle,label=analogceutwo1,caption=Duas leituras analógicas concorrentes utilizando a abstração]
+\begin{lstlisting}[style=CStyle,label=analogceutwo2,caption=Duas leituras analógicas concorrentes utilizando a abstração]
 _Serial.begin(9600);
 par do
     loop do
@@ -620,17 +619,95 @@ with
 end
 \end{lstlisting}
 \subsection{SPI}
+\tab SPI, ou Serial Peripheral Interface (interface periférica serial)é um protocolo de comunicação serial síncrono. Transmissão de dados de forma serial significa que a informação é transmitida bit a bit por uma porta. Para que os bits sejam corretamente interpretados, é necessário que haja um entendimento entre as duas partes sobre o momento que marca a transferência de um bit. No caso da comunicação serial síncrona, as duas partes dividem um sinal de clock além da linha de dados, como é representado na Figura \ref{figserial}. As bordas no sinal de clock marcam as transferências e, portanto, não há necessidade de se estabeler previamente a frequência, como é o caso de protocolos assíncronos como UART. 
+\begin{figure}
+    \centering
+    \includegraphics[width=.75\linewidth]{serial-communication}
+    \caption{Comunicação serial síncrona}
+    \label{figserial}
+\end{figure}
+\par No caso do protocolo SPI, o sinal de clock é controlado por somente um dos dispositivos. Esse dispositivo é chamado de master, e é responsável por iniciar toda comunicação. A outra parte é chamada de slave, e somente interpreta o sinal do clock. Existem duas linhas de dados entre um maser e um slave. Uma das linhas é utilizada para transferência de dados do master para o slave e uma segunda linha para transferências do slave para o master. Essas linhas são chamadas de MOSI (Master Out Slave In) e MISO (Master In Slave Out), respectivamente. Esse arranjo permite que uma transferência SPI seja full-duplex, ou seja, para o mesmo ciclo do clock, dados são transmitidos em ambas as direções. A Figura \ref{figspisingle} demonstra as conexões entre um master e um slavee exemplifica a transferência de um byte do master para o slave seguido de um byte na direção contrária..
+\par As duas partes utilizando SPI não precisam se preocupar com pré-estabelecer a frequência do clock, sendo somente necessário respeitar as limitações eletrônicas dos dispositivos. Existem dois parâmetros, porém, que devem ser acordados entre as duas partes. Os dados podem ser transmitidos por ordem crescente ou decrescente de significância dos bits. O outro parâmetro que deve ser igual em ambos é o chamado de "modo SPI", que define a fase e polaridade do sinal de clock relativo à transferência dos bits. A Figura \ref{figspimodes} demonstra a influência da fase (CPHA) e polaridade (POL) sobre a operação.
+\begin{figure}
+    \centering
+    \includegraphics[width=.75\linewidth]{spi-modes}
+    \caption{Comunicação serial síncrona}
+    \label{figspimodes}
+\end{figure}
+\begin{figure}
+    \centering
+    \includegraphics[width=.75\linewidth]{spi-single}
+    \caption{Transação de dados SPI}
+    \label{figspisingle}
+\end{figure}
+\par Uma quarta linha ainda é prevista no protocolo SPI. Essa linha, chamada de SS (Slave Select) é controlada pelo master e representa a seleção do slave. Isso significa que caso uma transação de dados esteja sendo realizada com o slave, a linha deve refletir essa seleção. A convenção é de que um estado de LOW na linha (diferença de potencial perto da referência terra) representa a seleção do dispositivo. A Figura \ref{figspisingless} demonstra a mesma situação da Figura \ref{figspisingle} com a adição do SS.
+\begin{figure}
+    \centering
+    \includegraphics[width=.75\linewidth]{spi-single-ss}
+    \caption{Transação de dados SPI com SS}
+    \label{figspisingless}
+\end{figure}
+\par O modelo de conexão do SPI, com o Slave Select, permite que mais de um slave esteja conectado ao mesmo master. Baste que haja uma linha de SS individual para cada slave para que o master seja capaz de selecionar entre os múltiplos slaves. Como o controle permite garantir que só um slave seja capaz de transmitir dados em um dado momento, a linha MISO pode ser compartilhada por todos os dispositivos. Como só o master escreve no MOSI e no clock, essas linhas também podem ser compartilhadas por todos. A Figura \ref{figspimultiple} exemplifica uma conexào entre um master e múltiplos slaves.
+\begin{figure}
+    \centering
+    \includegraphics[width=.75\linewidth]{spi-multiple}
+    \caption{Transação de dados SPI com SS}
+    \label{figspimultiple}
+\end{figure}
+\par O AtMega328p possuiu hardware dedicado a SPI. O módulo consiste em múltiplos registradores de configurações e um registrador de 8 bits para dados. O hardware é responsável por transmitir o registrador de dados bit a bit pelo canal MOSI e preencher o registrador com os 8 bits recebidos pelo MISO. O hardware também controla o clock, e permitindo que o microcontrolador se preocupe somente com escrever e ler dos registradores, sem se preocupar com a lógica da transmissão. Devido à limitação do tamanho do registrador, somente um byte pode ser transmitido por vez, sendo necessário leituras e escritas ao registrador entre transmissões.
+\par A biblioteca SPI disponibilizada pela Arduino utiliza os conceitos de transferência e transação. Enquanto uma transferência é o envio (ou recebimento) de um ou uma série de bytes, uma transação define os parâmetros da comunicação e garante o acesso exclusivo ao módulo SPI. Abaixo o Exemplo \ref{spi-c} demonstra uma aplicação simples onde, ao apertar um botão, a aplicação trasmite por SPI o estado de um LED que está piscando.
+\begin{lstlisting}[style=CStyle,label=analogceutwo1,caption=Duas leituras analógicas concorrentes não suportadas]
+#include <SPI.h>
 
-\paragraph{Estudo do Ambiente}
-\paragraph{Implementação Intermediária}
-\paragraph{Implementação Final}
+int ledState = LOW;             // ledState used to set the LED
+int buttonWasPressed = FALSE;
 
-\subsection{RF24}
+unsigned long previousMillis = 0;        // will store last time LED was updated
+const long interval = 1000;           // interval at which to blink (milliseconds)
 
-\paragraph{Estudo do Ambiente}
-\paragraph{Implementação Intermediária}
-\paragraph{Implementação Final}
+void setup() {
+  // set the digital pin as output:
+  pinMode(ledPin, OUTPUT);
+  pinMode(BUTTON, INPUT);
+  pinMode(SS, OUTPUT);
+  SPI.begin();
+}
 
+void loop() {
+  unsigned long currentMillis = millis();
+
+  if(digitalRead(BUTTON_PIN) == HIGH){
+    buttonWasPressed = TRUE;
+  }
+  if (!buttonWasPressed && currentMillis - previousMillis >= interval) {
+    // save the last time you blinked the LED
+    previousMillis = currentMillis;
+
+    // if the LED is off turn it on and vice-versa:
+    if (ledState == LOW) {
+      ledState = HIGH;
+    } else {
+      ledState = LOW;
+    }
+
+    // set the LED with the ledState of the variable:
+    digitalWrite(LED_BUILTIN, ledState);
+  } else {
+    char state = 0;
+
+    if(ledState) state = 'H';
+    else state = 'L';
+
+    digitalWrite(SS, LOW);
+
+    SPI.beginTransaction(SPISettings(CLOCK_RATE, BITORDER, SPI_MODE));
+    SPI.transfer(state);
+
+    digitalWrite(SS, HIGH);
+  }
+}
+\end{lstlisting}
+\par Podemos ver o programa utilizando funções do driver disponibilizado para Arduino para definir oe scopo 
 \section{Aplicação}
 
 \subsection{Proposta}
