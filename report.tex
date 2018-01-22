@@ -656,7 +656,7 @@ end
 \end{figure}
 \par O AtMega328p possuiu hardware dedicado a SPI. O módulo consiste em múltiplos registradores de configurações e um registrador de 8 bits para dados. O hardware é responsável por transmitir o registrador de dados bit a bit pelo canal MOSI e preencher o registrador com os 8 bits recebidos pelo MISO. O hardware também controla o clock, e permitindo que o microcontrolador se preocupe somente com escrever e ler dos registradores, sem se preocupar com a lógica da transmissão. Devido à limitação do tamanho do registrador, somente um byte pode ser transmitido por vez, sendo necessário leituras e escritas ao registrador entre transmissões.
 \par A biblioteca SPI disponibilizada pela Arduino utiliza os conceitos de transferência e transação. Enquanto uma transferência é o envio (ou recebimento) de um ou uma série de bytes, uma transação define os parâmetros da comunicação e garante o acesso exclusivo ao módulo SPI. Abaixo o Exemplo \ref{spi-c} demonstra uma aplicação simples onde, ao apertar um botão, a aplicação trasmite por SPI o estado de um LED que está piscando.
-\begin{lstlisting}[style=CStyle,label=analogceutwo1,caption=Duas leituras analógicas concorrentes não suportadas]
+\begin{lstlisting}[style=CStyle,label=spi-c,caption=Aplicação em C utilizando driver SPI bloqueante]
 #include <SPI.h>
 
 int ledState = LOW;             // ledState used to set the LED
@@ -670,7 +670,6 @@ void setup() {
   pinMode(ledPin, OUTPUT);
   pinMode(BUTTON, INPUT);
   pinMode(SS, OUTPUT);
-  SPI.begin();
 }
 
 void loop() {
@@ -700,21 +699,335 @@ void loop() {
 
     digitalWrite(SS, LOW);
 
+    SPI.begin();
     SPI.beginTransaction(SPISettings(CLOCK_RATE, BITORDER, SPI_MODE));
     SPI.transfer(state);
+    SPI.endTransaction();
+    SPI.end();
 
     digitalWrite(SS, HIGH);
   }
 }
 \end{lstlisting}
-\par Podemos ver o programa utilizando funções do driver disponibilizado para Arduino para definir oe scopo 
+\par Podemos ver que o programa, após emitir o sinal no SS, utilizando funções do driver disponibilizado para Arduino para estabelecer o escopo da transação, definindo os parâmetros e obtendo controle do driver. Devemos reparar também que o módulo é inicializado e, depois, finalizado. Isso se deve porque o hardware SPI pode ser desligado para não consumir recursos de energia do microcontrolador, sendo portanto uma implementaçã mais eficiente. Após transferir o byte, a transação é explicitamente terminada, liberando o acesso exclusivo ao driver, e a linha SS volta ao normal. Percebemos nesse exemplo que o controle do SS é responsabilidade da aplicação, não contemplado pelo driver.
+\par Embora já mencionado que o hardware executa a operação de transferência sem necessidade de interferência da aplicação, a função do driver é bloqueante, utilizando polling e caracterizando um desperdício de ciclos. A implementação da função pode ser vista abaixo no Exemplo \ref{spi-function}. 
+\begin{lstlisting}[style=CStyle,label=spi-function,caption=Implementação bloqueante da função de transferência SPI]
+  inline static uint8_t transfer(uint8_t data) {
+    SPDR = data;
+    /*
+     * The following NOP introduces a small delay that can prevent the wait
+     * loop form iterating when running at the maximum speed. This gives
+     * about 10% more speed, even if it seems counter-intuitive. At lower
+     * speeds it is unnoticed.
+     */
+    asm volatile("nop");
+    while (!(SPSR & _BV(SPIF))) ; // wait
+    return SPDR;
+  }
+\end{lstlisting}
+\par O comportamento bloqueante é análogo ao do módulo Analog. O byte a ser transferido pelo master é escrito no registrador, o que inicia a operação de transferência do hardware que, quando finalizar, mudará o valor de um bit em um registrador. A função faz polling na consulta a esse bit, aguardando a finalização para, então, retornar o valor recebido do slave. Vale lembrar que, como a comunicação é full-duplex (bytes podem ser transferidos e recebidos simultaneamente pelas linhas diferentes), a função é suficiente para enviar e receber um byte.
+\par Novamente similar ao que desenvolvemos para a leitura de valores analógicos, o hardware do SPI também pode ser configurado para disparar uma interrupção ao final de sua operação de transferência. Separar, portanto, a função de transferência em 3 funções: uma de início da operação, uma de consulta ao estado da operação, e uma de finalização é suficiente para superarmos os desafios descritos já na sessão do módulo anterior. 
+\par A conclusão em relação à conversão da função de transferência em eventos de Céu é, portanto, a mesma do módulo Analog. Como temos outras funções de configuração do driver, assim como as funções de definir o escopo da transação, modelamos tais operações como eventos de saída que realizavam as mesmas tarefas de sua contraparte no módulo original. A aplicação do Exemplo \ref{spi-c} tem seu mesmo comportamento refletido no Exemplo \ref{spi-ceu}, utilizando o driver que desenvolvemos em Céu.
+\begin{lstlisting}[style=CStyle,label=spi-ceu,caption=Aplicação utilizando driver SPI em Céu]
+var char state = _;
+par do
+    loop do
+        emit LED_13(on);
+        state = 'H';
+        await 1s;
+        emit LED_13(off);
+        state = 'L';
+        await 1s;
+    end
+with
+    loop do
+        await BUTTON;
+        emit SPI_BEGIN;
+        emit PIN_SS(off);
+        emit SPI_TRANSACTION_BEGIN(CLOCK_RATE, BITORDER, SPI_MODE);
+        emit SPI_TRANSFER_REQUEST(state);
+        await SPI_TRANSFER_DONE;
+        emit SPI_TRANSACTION_END;
+        emit PIN_SS(on);
+        emit SPI_END;
+    end
+end
+\end{lstlisting}
+\par Embora o driver esteja funcional, enfrentamos um problema quando queremos realizar transações em paralelo. O motivo é que, ao iniciar uma transação, o controle exclusivo do driver é obtido, e uma nova emissão do evento de início de uma transação irá bloquear aguardando o final da transação anterior. Esse comportamento é herdado da implementação original da função, porém não pode ser mantido em Céu. O bloqueio impede que a trilha atinja o comando de await. Como a trilha não termina, a aplicação não é capaz de reagir a eventos e, portanto, o programa congela. O Exemplo \ref{spi-block} exemplifica este caso.
+\begin{lstlisting}[style=CStyle,label=spi-block,caption=Aplicação congela pelas transações concorrentes]
+par do
+    loop do
+        await BUTTON_1;
+        emit SPI_BEGIN;
+        emit PIN_SS1(off);
+        emit SPI_TRANSACTION_BEGIN(CLOCK_RATE, BITORDER, SPI_MODE);
+        emit SPI_TRANSFER_REQUEST(0x11);
+        await SPI_TRANSFER_DONE;
+        emit SPI_TRANSACTION_END;
+        emit PIN_SS1(on);
+        emit SPI_END;
+    end
+with
+    loop do
+        await BUTTON_2;
+        emit SPI_BEGIN;
+        emit PIN_SS2(off);
+        emit SPI_TRANSACTION_BEGIN(CLOCK_RATE, BITORDER, SPI_MODE);
+        emit SPI_TRANSFER_REQUEST(0x22);
+        await SPI_TRANSFER_DONE;
+        emit SPI_TRANSACTION_END;
+        emit PIN_SS2(on);
+        emit SPI_END;
+    end
+end
+\end{lstlisting}
+\par Para que o usuário pudesse saber quando uma transação está em andamento, introduzimos uma variável de global de controle que possuiu seu valor modificado no evento de início da transação e restaurado no evento de final. A variável pode ser checada durante a aplicação, para que caso o driver esteja em uso, o usuário saiba aguardar o evento de finalização da transação e, só então, iniciar a sua. O Exemplo \ref{spi-block-solution} demonstra a utilização dessa variável para solucionar o comportamento do Exemplo \ref{spi-block}.
+\begin{lstlisting}[style=CStyle,label=spi-block-solution,caption=Aplicação utiliza a variável para não congelar]
+par do
+    loop do
+        await BUTTON_1;
+        emit SPI_BEGIN;
+        while spi_busy_transaction is true do
+            await SPI_TRANSACTION_END;
+        end
+        emit PIN_SS1(off);
+        emit SPI_TRANSACTION_BEGIN;(CLOCK_RATE, BITORDER, SPI_MODE)
+        emit SPI_TRANSFER_REQUEST(0x11);
+        await SPI_TRANSFER_DONE;
+        emit SPI_TRANSACTION_END;
+        emit PIN_SS1(off);
+        emit SPI_END;
+    end
+with
+    loop do
+        await BUTTON_2;
+        emit SPI_BEGIN;
+        while spi_busy_transaction is true do
+            await SPI_TRANSACTION_END;
+        end
+        emit PIN_SS2(off);
+        emit SPI_TRANSACTION_BEGIN;(CLOCK_RATE, BITORDER, SPI_MODE)
+        emit SPI_TRANSFER_REQUEST(0x22);
+        await SPI_TRANSFER_DONE;
+        emit SPI_TRANSACTION_END;
+        emit PIN_SS2(on);
+        emit SPI_END;
+    end
+end
+\end{lstlisting}
+\par A aplicação agora não congela e tem o comportamento esperado, aguardando o fim de ua transação para que a outra se inicie, divindo o controle do driver. Uma variável de contagem também é utilizada para que o hardware do SPI só seja desligado de fato quando todos os usuários do driver emitem o evento de desligamento. Esse comportamento é herdado do driver original. 
+\par Desenvolvemos uma abstração para encapsular a solução para transações concorrentes, assim como uma abstração para a operação de transferência, para facilidade. Utilizamos um recurso de Céu que permite que a abstração gere um escopo (watching). Podemos definir, dentro da abstração, um bloco de código que será chamado no momento que a aplicação sai do escopo. Implementamos a abstração de modo que, ao finalizar, o evento de finalização correspondente seja chamado. A implementação pode ser vista do Exemplo \ref{spi-transaction-abstraction}. O resultado pode ser visto no Exemplo \ref{spi-ceu-abstraction} que utiliza as abstrações, assim como no Exemplo \ref{spi-ceu-abstraction-final} que repete o comportamento do Exemplo \ref{spi-ceu}.
+\begin{lstlisting}[style=CStyle,label=spi-transaction-abstraction,caption=Implementação da abstração para transação]
+code/await SPI_Transaction (var u32 freq, var u8 byte_order, var u8 mode) -> none do
+    if outer.spi_transaction_busy then
+        await outer.spi_transaction_end until outer.spi_transaction_busy == false;
+    end
+    outer.spi_transaction_busy = true;
+
+    emit SPI_TRANSACTION_BEGIN(freq,byte_order,mode);
+    do finalize with
+        emit SPI_TRANSACTION_END;
+        outer.spi_transaction_busy = false;
+        emit outer.spi_transaction_end;
+    end
+    await FOREVER;
+end
+\end{lstlisting}
+\begin{lstlisting}[style=CStyle,label=spi-ceu-abstraction,caption=Transações concorrentes utilizando abstração]
+par do
+    loop do
+        await BUTTON_1;
+        watching SPI_Begin() do
+            emit PIN_SS1(off);
+            watching SPI_Transaction(CLOCK_RATE, BITORDER, SPI_MODE);
+                await SPI_Transfer(0x11);
+            end
+            emit PIN_SS1(off);
+        end
+    end
+with
+    loop do
+        await BUTTON_2;
+        watching SPI_Begin() do
+            emit PIN_SS2(off);
+            watching SPI_Transaction(CLOCK_RATE, BITORDER, SPI_MODE);
+                await SPI_Transfer(0x22);
+            end
+            emit PIN_SS2(off);
+        end
+    end
+end
+\end{lstlisting}
+\begin{lstlisting}[style=CStyle,label=spi-ceu-abstraction-final,caption=Aplicação utilizando driver SPI em Céu com abstrações]
+var char state = _;
+par do
+    loop do
+        emit LED_13(on);
+        state = 'H';
+        await 1s;
+        emit LED_13(off);
+        state = 'L';
+        await 1s;
+    end
+with
+    loop do
+        await BUTTON;
+        watching SPI_Begin() do
+            emit PIN_SS(off);
+            watching SPI_Transaction(CLOCK_RATE, BITORDER, SPI_MODE);
+                await SPI_Transfer(state);
+            end
+            emit PIN_SS(off);
+        end
+    end
+end
+\end{lstlisting}
 \section{Aplicação}
-
 \subsection{Proposta}
+\tab Como estudo de caso desenvolvemos uma aplicação em sistemas embarcados que utiliza os drivers desenvolvidos. O objetivo é demonstrar o uso dos drivers em uma aplicação de sistemas embarcados com aplicações práticas. Uma aplicação distribuída foi escolhida, por tirar proveito da eficiência promovida por Céu e os drivers desenvolvemos. Inspirado na Internet das Coisas, escolhemos um sistema de iluminação inteligente como alvo do desenvolvimento.
+\par O objetivo do sistema é reduzir a iluminação desnecessária em ambientes. A proposta é que a iluminação a potência máxima somente ocorra nas seções onde indivíduos estão localizados. As outras seções, neste caso, devem iluminar a uma potência menor de forma a economizar recursos, que seriam gastos caso o ambiente estivesse inteiro iluminado a máxima potência. Caso não existam indivíduos no local, todas as luzes devem estar desligadas.
+\par O sistema consiste em múltiplos nós, unidades individuais rodando uma instância da mesma aplicação. A proposta é que cada nó é responsável por uma seção do ambiente, e que possa se interagir com todos os outros nós utilizando comunicação sem fio.
+\par O comportamento do nó é ditado por dois fatores externos: o sensor de presença e o rádio. Caso o sensor esteja apontando presença, o nó deve ligar sua iluminação, aqui representada por um LED, em sua potência máxima. Além disso, deve usar seu rádio para transmitir uma mensagem a todos os nós, periodicamente, informando da presença. Caso o sensor não aponte ou deixe de apontar presença, o nó desliga seu LED e passa a aguardar mensagens dos outros nós. Caso o nó receba uma mensagem, liga seu LED a meia potência, continuando a escutar por mensagens subsequentes. Se não receber mensagens em um intervalo de tempo, volta ao estado do LED desligado. Na situação em que o sensor aponta presença enquanto o nó está no estado de meia potência, deve ligar o LED na potência máxima e passar a enviar as mensagens, no mesmo comportamento já descrito. O diagrama de estado do comportamento descrito pode ser visto na Figura \ref{state-diagram}.
+\begin{figure}
+    \centering
+    \includegraphics[width=.75\linewidth]{state-diagram}
+    \caption{Diagrama de estado do comportamento de um nó do sistema}
+    \label{state-diagram}
+\end{figure}
 \subsection{Desenvolvimento}
-\subsection{Resultado}
+\par Para o sensor de presença do sistema, assumimos utilização de medidores de distância por leituras analógicas, como sonares e sensores infra-vermelhos. Isso nos possibilita utilizar o driver Analog que desenvolvemos.
+\par Escolhemos radio-frequência como solução de comunicação sem fio para o sistema. Os módulos de rádio NRF24L01N foi escolhido por atender os requisitos necessários, estar disponível para  desenvolvimento da aplicação e possuír um driver em C desenvolvido, que facilita sua utilização. O NRF24L01N é um poderoso transmissor e receptor de rádio, com uma gamma de funcionalidades complexas para necessidades avançadas. Para este projeto, só utilizamos as funcionalidades básicas de transmissão e recepção de um byte, somente tirando proveito das configurações do componente e seus protocolos internos para aumentar a chance de transmissão bem-sucedida.
+\par O componente utiliza interface SPI para toda sua operação. Todos os comandos passados para o rádio, acesso a registradores e leitura de valores é feita através de transferências em SPI. Esse fato permitiu que utilizássemos o driver SPI que implementamos.
+\par Implementamos a aplicação em C utilizando os driver desenvolvidos pela Arduino para comparação. A aplicação pode ser vista no Exemplo \ref{app-c}. Não mantivemos no exemplo, por motivos de clareza, sessões de código da aplicação desenvolvida cujo propósito era configuração do rádio.
+\begin{lstlisting}[style=CStyle,label=app-c,caption=Aplicação de iluminação inteligente em C, simplificada]
+// The role of the current running sketch
+role_e role = role_none;
+role_e newRole = role_none;
 
+unsigned long timeLastMessage = 0;
+
+void setup(void)
+{
+  pinMode(SENSOR_PIN,INPUT);
+  pinMode(LED_PIN,OUTPUT);
+
+  radio.begin();
+}
+
+void loop(void)
+{
+
+ if(analogRead(SENSOR_PIN) > SENSOR_THRESHOLD){
+  newRole = role_speak;
+ } else {
+  newRole = role_listen;
+ }
+ // If new role, change
+ if(newRole != role){
+  role = newRole;
+  if(role == role_listen){
+   timeLastMessage = millis();
+   radio.startListening();
+  } else {
+   analogWrite(LED_PIN,FULL_POWER);
+   radio.stopListening();
+  }
+ }
+  if (role == role_speak)
+  {
+    uint8_t radio_id = RADIO_ID;
+    radio.write( &radio_id, sizeof(uint8_t) );
+    delay(SEND_INTERVAL);
+  }
+  if ( role == role_listen )
+  {
+    // if there is data ready
+    if ( radio.available() )
+    {
+      uint8_t signal_id = 0;
+      radio.read( &signal_id, sizeof(uint8_t) );
+    }
+      analogWrite(LED_PIN,HALF_POWER);
+      timeLastMessage = millis();
+    }
+    if(millis() - timeLastMessage > SEND_INTERVAL * 2){
+      analogWrite(LED_PIN,LOW);
+    }
+  }
+}
+\end{lstlisting}
+\par Além dos pinos dedicados ao protocolo SPI, o componente de rádio possuiu um pino para interrupção. Quando configurado, o pino emite um sinal em momentos pré-definidos da operação do rádio. No desenvolvimento desse sistema, configuramos o pino de interrupção para reagir somente quando o rádio recebe uma mensagem. Isso permitiu que conectássemos esse sinal ao pino de interrupção externa do Arduino, possibilitando a execução de uma interrupção na chegada de uma mensagem e, consequentemente, a implementação de um evento em Céu de chegada de mensagem, analogamente aos eventos de entrada correspondente às interrupções dos drivers desenvolvidos. Isso permitiu tornar o processo de aguardar uma mensagem do rádio mais eficiente. A alternativa em C, como é possível ver no Exemplo \ref{app-c}, é realizar polling.
+\par A aplicação deve constantemente checar se há presença no ambiente. Utilizamos o driver que desenvolvemos e, portanto, as leituras estão sendo feitas de forma eficiente e utilizando interrupção.
+\par Embora toda a operação ao rádio seja feita com SPI, possibilitando o uso do driver que desenvolvemos para todas as etapas da operação, por limitação do kit de desenvolvimento Céu-Arduino, só utilizamos o driver na operação mais executada no envio de mensagens, a transferência do byte a ser transmitido pelo rádio. Para as demais operações, optamos por utilizar as funções já implementadas do driver em C, mesmo que bloqueantes. Devido à frequência inferior que essas operações são executadas quando comparada com as operações de envio e recebimento. 
+\par O produto final em Céu pode ser visto no Exemplo \ref{app-ceu}. Do mesmo modo que no Exemplo \ref{app-c}, não mantivemos no exemplo, por motivos de clareza, sessões de código da aplicação desenvolvida cujo propósito era configuração do rádio. A aplicação foi capaz de evitar os bloqueios causados pelos drivers SPI e Analog de sua contraparte em C, assim como evitar o polling no estado do rádio.
+\begin{lstlisting}[style=CStyle,label=spi-ceu-abstraction-final,caption=Aplicação utilizando driver SPI em Céu com abstrações]
+code/await Write_register (var u8 reg, var u8 value) -> u8 do
+    var u8 status = _;
+    watching SPI_Transaction(4 * MHZ, SPI_MSBFIRST, SPI_MODE0) do
+        csn(off);
+        status = await SPI_Transfer(_W_REGISTER | ( _REGISTER_MASK & reg ) ); 
+        await SPI_Transfer(value);
+        csn(on);
+    end
+    escape status;
+end
+emit SPI_BEGIN;
+emit RADIO_BEGIN;
+// Keep checking the button
+spawn do
+    loop do
+        var int value = await Analog(0);
+        if value > SENSOR_THRESHOLD then
+            emit presence;
+        else
+            emit no_presence;
+        end
+    end
+end
+loop do
+    par/and do
+        par/or do
+            // abort when PRESENCE
+            await presence;
+        with
+            // LISTEN TO NEIGHBOURS
+            emit RADIO_RECEIVER;
+            loop do
+                par/or do
+                    await Radio_receive();
+                    _analogWrite(LED_PIN,HALF_POWER);
+                with
+                    await (SEND_INTERVAL * 2)ms;
+                    _analogWrite(LED_PIN,off);
+                end
+            end 
+        end 
+    with
+        await presence;
+        // SEND TO NEIGHBOURS
+        _analogWrite(LED_PIN,FULL_POWER);
+        emit RADIO_TRANSMITTER;
+        par/or do
+            await no_presence;
+            _analogWrite(LED_PIN,off);
+        with
+            loop do
+                await 1500 us;
+                // write the payload
+                await Write_register(_W_TX_PAYLOAD, RADIO_ID);
+                ce(on);
+                await 15 us;
+                {delayMicroseconds(15);}
+                ce(off);
+                await SEND_INTERVAL ms;
+            end
+        end
+    end
+end
+\end{lstlisting}
 \section{Comentários Finais}
+\tab Implementar os drivers utilizando interrupção e utilizar o ambiente de Céu permitiu gerar um produto final de aplicação mais eficiente e de lógica mais clara que originalmente em C, como desejado. Produzimos um sistema de aplicação real, e obtemos o funcionamento desejado.
+\par Os trabalho que realizamos nos drivers e na aplicação se encontra publicado no projeto Céu e Céu-Arduino, como uma contribuição à comunidade desenvolvedora. Embora o ambiente Céu-Arduino ainda possua suas limitações, o desenvolvimento dos drivers se provou recompensar em ganho de eficiência, além de ser reproduzível para outros módulos. O desenvolvimento realizado pode ser continuado em forma da implementação de outros drivers, continuando o enriquecimento do ambiente Céu-Arduino e o estímulo de sua melhoria.
 
 \newpage
 
