@@ -181,11 +181,10 @@ organization = {ATMel},
 %	TITLE SECTION
 %----------------------------------------------------------------------------------------
 
+\newcommand{\titlename}{Desenvolvimento de drivers assíncronos para a plataforma Céu-Arduino}
+
 \HRule \\[0.4cm]
-{ \huge \bfseries Aplicação em Sistemas Distribuídos
-utilizando biblioteca e driver próprios,
-baseados em interrupções desenvolvido
-em Céu para o microcontrolador Arduino}\\[0.4cm] % Title of your document
+{ \huge \bfseries \titlename}\\[0.4cm] % Title of your document
 \HRule \\[1.5cm]
  
 %----------------------------------------------------------------------------------------
@@ -238,10 +237,7 @@ Ana \textucsc{Lúcia de Moura} % Supervisor's Name
 %\\[2cm]
 {\LARGE Guilherme \textusc{Simas}}
 \\[2cm]
-{\huge Aplicação em Sistemas Distribuídos
-utilizando biblioteca e driver próprios,
-baseados em interrupções desenvolvido
-em Céu para o microcontrolador Arduino}
+{\huge \titlename}
 \\[3cm]
 Relatório de Projeto Final, apresentado ao programa
 Engenharia de Computação da PUC-Rio como requisito
@@ -258,12 +254,12 @@ Rio de Janeiro
 \newpage
 \vspace*{\fill}
 \begin{abstract}
-Exploramos a superioridade da linguagem de programação Céu em termos de eficiência e modelagem sobre modelos de programação procedural para sistemas embarcados. Desenvolvemos drivers não bloqueantes na plataforma Céu-Arduino utilizando interrupções a partir de sua contraparte bloqueante em C já existente. Uma aplicação distribuída de iluminação inteligente inpirada em Internet das Coisas foi implementada em Céu para exemplificar o uso dos drivers que desenvolvemos.\\
+Comparamos a linguagem de programação Céu em termos de eficiência e modelagem frente a modelos de programação procedural para sistemas embarcados. Desenvolvemos drivers não bloqueantes na plataforma Céu-Arduino utilizando interrupções a partir de sua contraparte bloqueante em C já existente. Uma aplicação distribuída de iluminação inteligente inpirada em Internet das Coisas foi implementada em Céu para exemplificar o uso dos drivers que desenvolvemos.\\
 \emph{Palavras-chave}: \textusc{céu; sistemas distribuídos; eficiência; sistemas embarcados}
 \end{abstract}
 \selectlanguage{english}
 \begin{abstract}
-We explore the superiority in terms of eficiency and modelling of the Céu programming language over widespread procedural programming models. We develop non blocking drivers in the Céu-Arduino platform using interruptions based on their currently developed blocking counterpart in C. A distributed smart lighting application inpired in the Internet of Things was implemented in Céu to exemplify the use of the drivers we developed. \\
+We compare the Céu programming language in terms of eficiency and modelling over widespread procedural programming models. We develop non blocking drivers in the Céu-Arduino platform using interruptions based on their currently developed blocking counterpart in C. A distributed smart lighting application inpired in the Internet of Things was implemented in Céu to exemplify the use of the drivers we developed. \\
 \emph{Keywords}: \textusc{céu; distributed systems; eficiency; embedded systems}
 \end{abstract}
 \selectlanguage{brazilian}
@@ -294,11 +290,11 @@ We explore the superiority in terms of eficiency and modelling of the Céu progr
 \section{Introdução}	
 
 
-\tab Existem várias definições do termo “Internet das
+\tab Existem várias definições para o termo “Internet das
 Coisas”, porém a grande maioria delas compartilha a ideia de que a conexão e troca de dados
 entre elementos é parte vital do conceito. Por esse motivo, a área de Sistemas Distribuídos possui um
-papel importantíssimo nesse desenvolvimento, já que toda aplicação deve ser capaz de trocar
-mensagens e informação segura e corretamente de forma a se sincronizar, e de forma escalável.\cite{singh2014}\cite{wortmann2015}\cite{chui2010}
+papel importante nesse desenvolvimento, já que toda aplicação deve ser capaz de trocar
+mensagens segura e corretamente de forma a se sincronizar, e de forma escalável.\cite{singh2014}\cite{wortmann2015}\cite{chui2010}
 Outro ponto sobre a escalabilidade de aplicações em Internet das Coisas é a necessidade de unidades
 computacionais de custo baixo e consumo eficiente de energia. Por esse motivo microcontroladores
 são outra parte vital do desenvolvimento de soluções, apresentando, entre outras vantagens, uma
@@ -309,13 +305,13 @@ interfacear com esses componentes.\cite{edwards1997}
 \par Muitas ferramentas de desenvolvimento fornecidos para microcontroladores incluem rotinas que causam um bloqueio na
 aplicação, ou seja, enquanto está realizando a chamada correspondente àquela funcionalidade, o
 software entra em um estado onde realiza tarefas inúteis até que o hardware conclua sua
-parte. Esse comportamento é indesejável visto que a aplicação desperdiça tempo aguardando o
+parte. Esse comportamento é indesejável, visto que a aplicação desperdiça tempo aguardando o
 hardware enquanto poderia estar realizando outras tarefas como, por exemplo, um processamento de
 dados recebidos por uma mensagem, ou a troca de mensagens em si. Essa ineficiência marca um
-desperdício de tempo e consumo de energia. O motivo pelo qual tal comportamento bloqueante é utilizado é pela simplicidade decorrente da programação sequencial.
+desperdício de tempo e consumo de energia. O motivo pelo qual tal comportamento bloqueante é comumente utilizado é pela simplicidade decorrente da programação sequencial.
 \par O bloqueio de aplicações é um desafio enfrentado frequentemente em aplicações que envolvem
 sistemas nos quais o tempo de processamento ou reação a estímulos externos é pertinente ao
-funcionamento da aplicação. O paradigma de programação orientada a eventos é utilizado como abordagem nessas situações. Em uma aplicação orientada a eventos, o sistema segue
+funcionamento da aplicação. O paradigma de programação orientada a eventos é utilizado como alternativa nessas situações. Em uma aplicação orientada a eventos, o sistema segue
 seu fluxo normal até a chegada de um “evento”, como a chegada de uma mensagem, ou a conclusão
 de um trabalho por parte do hardware. A chegada de tal evento emite uma interrupção no sistema, que
 irá executar uma rotina de tratamento desse evento, e após terminado, irá retomar seu fluxo normal
@@ -326,18 +322,14 @@ fluxo de execução da aplicação, algo que linguagens comumente utilizadas par
 sistemas embarcados, como C, não fazem um bom papel de representar, por serem historicamente
 procedurais (espera-se que o fluxo de execução siga naturalmente a ordem de leitura do código, a
 linha de baixo imediatamente seguindo a execução da linha de cima).
-\par Dentre um número enorme de microcontroladores, a plataforma Arduino possui uma comunidade estabelecida de desenvolvedores e é open-source. Contribuições na forma de
-exemplos de aplicações e desenvolvimento de drivers e bibliotecas são frequentes e são o que tornam
-a comunidade tão bem-sucedida. Por último, a plataforma é de fácil acesso e muitas vezes utilizada
-como parâmetro, devido à sua popularidade. \cite{arduinoblog}
-\par Céu é uma linguagem de programação estruturada síncrona reativa, onde a orientação a eventos é
-inerente à programação, assim como o paralelismo entre seções de código que surgem com esse
-paradigma, como mencionado anteriormente. A linguagem, portanto, faz um ótimo papel de
-implementar a orientação a eventos. Outro benefício de Céu é o fato de que a ordem de execução de
+\par Céu é uma linguagem estruturada síncrona reativa, onde a orientação a eventos é
+inerente à sua programação, assim como o paralelismo entre seções de código que surgem com esse
+paradigma. Outro benefício de Céu é o fato de que a ordem de execução de
 trechos de programa que estão descritos para rodar em paralelo é previsível dado a chegada de um
 determinado evento.\cite{santanna2012} Devido às vantagens dessas características para a programação de
-componentes de sistemas embarcados, se encontra desenvolvido um kit de desenvolvimento em Céu para
+componentes de sistemas embarcados, se encontra disponibilizado um kit de desenvolvimento em Céu para
 uma família de microcontroladores, Arduino, chamada Céu-Arduino.
+\par Dentre um número enorme de microcontroladores, a plataforma Arduino possui uma comunidade estabelecida de desenvolvedores e é open-source. Contribuições na forma de exemplos de aplicações e desenvolvimento de drivers e bibliotecas são frequentes e são o que tornam a comunidade tão bem-sucedida. Por último, a plataforma é de fácil acesso e muitas vezes utilizada como parâmetro, devido à sua popularidade. \cite{arduinoblog}
 \par Céu-Arduino permite a programação de microcontroladores Arduino utilizando a linguagem Céu, o
 que facilita a programação orientada a eventos. Céu-Arduino, porém, não reimplementa os drivers e
 bibliotecas já desenvolvidos para Arduino, e, portanto, não pode impedir o
@@ -349,8 +341,7 @@ bloqueio da aplicação, de forma a que esse bloqueio não ocorra mais. A aborda
 desenvolvimento foi do uso de interrupções suportadas por hardware especializado com orientação a
 eventos e, por esse motivo, a linguagem escolhida para esse desenvolvimento foi Céu-Arduino. Os
 resultados desse desenvolvimento foram publicados na página open-source de desenvolvimento do
-kit, para que futuros desenvolvedores possam fazer uso de tais módulos em suas próprias aplicações
-e objetivos.
+kit, para que futuros desenvolvedores possam fazer uso de tais módulos em suas próprias aplicações.
 \par Por fim, desenvolvemos uma aplicação em Sistemas Distribuídos para exemplificar a pertinência
 dos módulos desenvolvidos. A aplicação consiste em uma rede de sensores e atuadores na
 plataforma Arduino, utilizando troca de mensagens. A aplicação escolhida como estudo de caso foi um sistema de iluminação inteligente. Esse trabalho tem como meta servir como uma contribuição
@@ -420,7 +411,7 @@ void loop() {
   }
 }
 \end{lstlisting}
-\par Embora a estrutura da aplicação seja simples, seu comportamento não é o esperado. Como a aplicação é sequencial, a checagem do estado do botão só ocorre uma vez que toda a rotina de piscar o LED foi executada. Caso o usuário aperte e solte o botão dentro do intervalo de 2 segundos no qual o LED está piscando, o input será perdido. Inserir checagens no meio da rotina de piscar o LED não resolve o problema, já que o botão ainda pode ser apertado e soltado no segundo de execução tomado pelas chamadas à função bloqueante delay(). Além disso, a aplicação seria mais eficiente se o microcontrolador estrasse em um estado de baixo consumo de energia durante os momentos em que está aguardando a passagem do tempo. O uso da função delay(), por ser implementada com polling, faz com que o microcontrolador desperdice recursos durante esse tempo de espera.
+\par Embora a estrutura da aplicação seja simples, seu comportamento não é o esperado. Como a aplicação é sequencial, a checagem do estado do botão só ocorre uma vez que toda a rotina de piscar o LED foi executada. Caso o usuário aperte e solte o botão dentro do intervalo de 2 segundos no qual o LED está piscando, o input será perdido. Inserir checagens no meio da rotina de piscar o LED não resolve o problema, já que o botão ainda pode ser apertado e soltado no segundo de execução tomado pelas chamadas à função bloqueante delay(). Além disso, a aplicação seria mais eficiente se o microcontrolador entrasse em um estado de baixo consumo de energia durante os momentos em que está aguardando a passagem do tempo. O uso da função delay(), por ser implementada com polling, faz com que o microcontrolador desperdice recursos durante esse tempo de espera.
 \par Para que o comportamento responsivo desejado seja obtido, é necessário não utilizar a função bloqueante para a contagem do tempo. O Exemplo \ref{orientacaoevento2} a seguir propõe essa abordagem.
 \begin{lstlisting}[style=CStyle,label=orientacaoevento2,caption=Aplicação não bloqueante]
 int ledState = LOW;             // ledState used to set the LED
@@ -486,9 +477,9 @@ void loop()
 \end{lstlisting}
 \par\par Vemos portanto que a utilização de linguagens procedurais, como C, para programação em sistemas embarcados, embora bem difundida, sofre com a dificuldade de implementarem a orientação a eventos de forma concisa e clara. Conforme a complexidade e a necessidade de responsividade a estímulos externos crescem, mais variáveis de controle são necessárias e aplicações simples se convertem em pedaços de código de difícil interpretação. A proposta de simplicidade decorrente da programação sequencial, portanto, se mostra ilusória.
 \subsection{Céu-Arduino}
-\tab Céu é uma linguagem síncrona reativa estruturada open-source desenvolvida na PUC-Rio.\cite{santanna2012}\cite{githubceu} A proposta da linguagem é resolver os desafios descritos acima apresentados pelas linguagens procedurais. A semântica de Céu permite ao usuário escrever uma aplicação reativa orientada a eventos de forma determinística e clara, reduzindo o uso de variáveis de controle. A linguagem expressa a diferenciação lógica entre rotinas que executam sequencialmente e paralelamente.
+\tab Céu é uma linguagem síncrona reativa estruturada open-source desenvolvida na PUC-Rio.\cite{santanna2012}\cite{githubceu} A proposta da linguagem é resolver os desafios descritos acima apresentados pelas linguagens procedurais. A semântica de Céu permite ao usuário escrever uma aplicação reativa orientada a eventos de forma determinística e clara, reduzindo o uso de variáveis de controle.
 \par O foco da linguagem na orientação a eventos se dá pelas primitivas de aguardar um evento ("await") e emitir um evento ("emit"). Eventos em Céu podem ser tanto internos, emitidos pelo programa para coordenação, como externos, como timers e I/O.
-\par A linguagem expressa a diferenciação lógica entre rotinas que executam sequencialmente e paralelamente. Céu possuiu primitivas para expressar blocos de código que devem rodar em paralelo (par, par/or, par/and). A execução desses blocos, chamados de trilhas, deve incluir ao menos uma espera de um evento, expressado por uma diretiva da linguagem. Ao bloquear à espera de um evento a outra trilha em paralelo pode executar. Esse modelo permite que os dois blocos de código executem se intercalando porém sem concorrência, dado que todo trecho de código delimitado por esperas a eventos (as trilhas) executam sem preempção. A semântica de Céu assume que o tempo de execução das trilhas é imediato se comparado com a frequência dos eventos. Caso esta diretiva seja respeitada, a aplicação permanece reativa.
+\par A linguagem expressa a diferenciação lógica entre rotinas que executam sequencialmente e paralelamente. Céu possuiu primitivas para expressar blocos de código que devem rodar em paralelo (par, par/or, par/and). A execução desses blocos, chamados de trilhas, deve incluir ao menos uma espera de um evento, expressado por uma diretiva da linguagem. Ao bloquear à espera de um evento, a outra trilha em paralelo pode executar. Esse modelo permite que os dois blocos de código executem se intercalando porém sem paralelismo real, dado que todo trecho de código delimitado por esperas a eventos (as trilhas) executam sem preempção. A semântica de Céu assume que o tempo de execução das trilhas é imediato se comparado com a frequência dos eventos. Caso esta diretiva seja respeitada, a aplicação permanece reativa.
 \par O Exemplo \ref{ceu1} a seguir implementa a mesma aplicação dos exemplos anteriores em C.  
 \begin{lstlisting}[style=CStyle,label=ceu1,caption=Aplicação em Céu]
 par/or do
@@ -508,12 +499,12 @@ end
 \par A camada de ambiente permite que os eventos de entrada possam ser implementados utilizando interrupções. No caso do Exemplo \ref{ceu1}, basta que a interrupção atrelada ao pino dispare o evento BUTTON\textunderscore PRESS para que a aplicação possua a eficiência proposta pelo Exemplo \ref{interrupcao1}.
 \par Contribuimos para esta camada de ambiente neste projeto com os drivers que desenvolvemos, de módulos da plataforma Arduino, utilizando interrupções, de forma a enriquecer o kit.
 \section{Drivers}
-\tab O microcontrolador AtMega328p possuiu funcionalidades e módulos embarcados. A platadorma Arduino disponibiliza drivers em C para esses módulos que, apesar do hardware suportar interrupções, utiliza polling. Partimos do estudo de tais drivers em C e do hardware para produzirmos versões em Céu que utilizem interrupção e, assim, oferecem as vantagens já descritas para o desenvolvimento de aplicações. As soluções desenvolvidas neste projeto se encontram disponíveis no repositório open-source do kit Céu-Arduino. Para que o driver fosse implementado, foi necessário um estudo não só da plataforma Arduino e do microcontrolador, mas também do ambiente de desenvolvimento disponibilizado pela Arduino e das bibliotecas já implementadas e disponibilizadas em Céu, principalmente as de Céu-Arduino.
-\par Todo o código desenvolvido neste projeto segue a intenção de priorizar simplicidade e rapidez na execução, respeitando os requisitos de um módulo suficientemente robusto e funcional. De talmodo, os drivers desenvolvidos atenderão somente a plataforma Arduino Uno, por ser a mais utilizada e disponível, além de possuírem limitações que podem vir a exigir atenção e responsabilidade do usuário final no uso dos drivers em aplicações. O motivo é a busca por uma melhor utilização do tempo do projeto e redução da carga computacional para a execução dos drivers.
-\par O ambiente de desenvolvimento que usa a linguagem C é o mesmo tanto para Arduino quanto para Céu-Arduino. Isto é, ambos os códigos são em alguma etapa compilados utilizando o mesmo compilador. Esse compilador é disponibilizado pela AVR e é uma versão customizada de GCC, chamada de AVR-GCC. Em conjunto com o compilador, são utilizadas bibliotecas da AVR que tratam da abstração do hardware, como acesso a registradores, para variados chips da Atmel, incluindo o AtMega328p, presente no Arduino Uno, plataforma para qual os drivers deste projeto são destinados.
-\par Outra ferramenta essencial para o andamento do projeto foi a capacidade de se registrar rotinas de serviço a interrupções (Interrupt Service Routines, ISR), que são rotinas de código associadas a interrupções do microcontrolador. Em outras palavras, quando o hardware emite uma interrupção, osoftware executaria a ISR atrelada àquela interrupção. AVR disponibiliza uma biblioteca de tratamento de interrupções que torna simples a implementação de tais ISRs.
-\par Atmel disponibiliza um documento detalhado \cite{atmegadatasheet} das especificações do microcontrolador presente no Arduino Uno, o AtMega328p. Esse documento, chamado datasheet, possui a definição de todas as funcionalidades e hardwares dedicados presentes, incluindo a definição e descrição dos registradores responsáveis e atrelados a cada um. Esse documento é vital para o entendimento das capacidades e limitações do chip e, principalmente, o de como operá-lo.
-\par A datasheet está no centro da primeira etapa do desenvolvimento que realizamos, que é estudar o funcionamento do hardware para que, em conjunto com o estudo do código da implementação atual (se existente), seja possível compreender o comportamento de uma API tradicional. O foco desse passo é criar uma base de conhecimento sobre as informações já disponíveis acerca do módulo, principalmente em relação a interrupções. Esclarecer em quais momentos o hardware opera sem necessidade de interferência do software indica onde a aplicação poderá entrar em modo de espera, sendo acordado pela interrupção. Esse processo, acompanhado do estudo da implementação já existente dos drivers bloqueantes disponibilizados, permite identificar onde o bloqueio desnecessário do driver, o polling, ocorre, e como ele pode ser evitado.
+\tab O microcontrolador ATMega328p possuiu funcionalidades e módulos embarcados. A platadorma Arduino disponibiliza drivers em C para esses módulos que, apesar do hardware suportar interrupções, utiliza polling. Partimos do estudo de tais drivers em C e do hardware para produzirmos versões em Céu que utilizem interrupção e, assim, ofereçam as vantagens já descritas para o desenvolvimento de aplicações. As soluções desenvolvidas neste projeto se encontram disponíveis no repositório open-source do kit Céu-Arduino. Para que o driver fosse implementado, foi necessário um estudo não só da plataforma Arduino e do microcontrolador, mas também do ambiente de desenvolvimento disponibilizado pela Arduino e das bibliotecas já implementadas e disponibilizadas em Céu, principalmente as de Céu-Arduino.
+\par Todo o código desenvolvido neste projeto segue a intenção de priorizar simplicidade e rapidez na execução, respeitando os requisitos de um módulo suficientemente robusto e funcional. De tal modo, os drivers desenvolvidos atendem somente a plataforma Arduino Uno, por ser a mais utilizada e disponível, além de possuírem limitações que podem vir a exigir atenção e responsabilidade do usuário final no uso dos drivers em aplicações. O motivo é a busca por uma melhor utilização do tempo do projeto e redução da carga computacional para a execução dos drivers.
+\par O ambiente de desenvolvimento que usa a linguagem C é o mesmo tanto para Arduino quanto para Céu-Arduino. Isto é, ambos os códigos são em alguma etapa compilados utilizando o mesmo compilador. Esse compilador é disponibilizado pela AVR e é uma versão customizada de GCC, chamada de AVR-GCC. Em conjunto com o compilador, são utilizadas bibliotecas da AVR que tratam da abstração do hardware, como acesso a registradores, para variados chips da Atmel, incluindo o ATMega328p, presente no Arduino Uno, plataforma para qual os drivers deste projeto são destinados.
+\par Outra ferramenta essencial para o andamento do projeto foi a capacidade de se registrar rotinas de serviço a interrupções (Interrupt Service Routines, ISR), que são rotinas de código associadas a interrupções do microcontrolador. Em outras palavras, quando o hardware emite uma interrupção, o software executa a ISR atrelada àquela interrupção. O AVR-GCC disponibiliza uma biblioteca de tratamento de interrupções que torna simples a implementação de tais ISRs.
+\par Atmel disponibiliza um documento detalhado \cite{atmegadatasheet} das especificações do microcontrolador presente no Arduino Uno, o ATMega328p. Esse documento, chamado datasheet, possui a definição de todas as funcionalidades e hardwares dedicados presentes, incluindo a definição e descrição dos registradores responsáveis e atrelados a cada um. Esse documento é vital para o entendimento das capacidades e limitações do chip e, principalmente, de como operá-lo.
+\par A datasheet está no centro da primeira etapa do desenvolvimento que realizamos, que é estudar o funcionamento do hardware para que, em conjunto com o estudo do código da implementação atual (se existente), seja possível compreender o comportamento de uma API tradicional. O foco desse passo é criar uma base de conhecimento sobre as informações já disponíveis acerca do módulo, principalmente em relação a interrupções. Esclarecer em quais momentos o hardware opera sem necessidade de interferência do software, indica onde a aplicação poderá entrar em modo de espera, sendo acordado pela interrupção. Esse processo, acompanhado do estudo da implementação já existente dos drivers bloqueantes disponibilizados, permite identificar onde o bloqueio desnecessário do driver, o polling, ocorre, e como ele pode ser evitado.
 \par Com o conhecimento do suporte a interrupção e a identificação do bloqueio, pudemos modificar o driver para que não seja mais bloqueante. A função que realizava a operação por completo, se divide em funções que iniciam a operação, funções que consultam o estado da operação e, caso necessário, funções que finalizam a operação. Isso torna possível que a aplicação possa realizar outras operações entre consultas ao estado, o que na chamada bloqueante não era possível. Utilizar interrupções permite que o hardware entre em um modo de baixo consumo e seja acordado pela interrupção, contribuindo para a eficiência da solução no uso de recursos.
 \par O passo final foi, com o driver não bloqueante em C em mãos, convertê-lo para Céu. As funções são transformadas em eventos de entrada e saída. Expressamos o início de uma operação no hardware por parte da aplicação como a emissão de um evento de saída. Ao finalizar a operação, o driver emite um evento de entrada, o qual a aplicação pode aguardar com await. Deste modo fica explícito no bloco de código que o programa emite uma requisição ao módulo e aguarda sua resposta, podendo realizar tarefas no meio tempo de forma clara devido ao paralelismo da linguagem. Quando maior complexidade era necessária, abstrações da linguagem foram usadas.
 \par Escolhemos módulos que causam maior impacto devido à frequência de sua utilização em aplicações de sistemas embarcados. As escolhas foram Entrada e Saída Analógica (Analog I/O) e Comunicação SPI (SPI).
@@ -521,7 +512,7 @@ end
 \tab Foi levantado que as funcionalidades de entrada (leitura de valor analógico) e saída (emissão de valor analógico) são atreladas a hardwares dedicados distintos no microcontrolador. Enquanto os valores de saída analógicos são simulados utilizando ondas PWM (o pino liga e desliga em intervalos regulares, onde o valor analógico seria a razão entre o tempo que permanece ligado e o tempo que permanece desligado). Essa funcionalidade já se encontrava implementada em Céu e, portanto, não foi abordada.
 \par Os valores de leitura, em outra mão, são obtidos por um hardware de Conversão Analógica para Digital (ADC). Esse componente dedicado recebe um valor de voltagem analógico e, após ciclos de processamento, guarda em seus registradores a representação de 10 bits deste valor, quando comparado a uma referência de valor máximo. Em outras palavras, se a voltagem de entrada for o ground, o resultado será “0”. Caso seja igual ou acima da voltagem de referência, será 1023. 
 \par Embora existam mais de um pino de leitura analógico no microcontrolador, existe somente um hardware de ADC. Para que possa atender a todos os seis pinos, o hardware conta com um multiplexador que seleciona o pino para qual a leitura deve ser feita. Repare que não é possível ter mais de um pino tendo seu valor lido pelo hardware ao mesmo tempo. 
-\par Para efetuar uma conversão, o multiplexador, cujo valor é controlado por um registrador modificável pelo desenvolvedor, deve receber o valor do pino para qual a leitura será feita. Do mesmo modo, os outros valores de configuração devem ser setados de acordo com a configuração desejada. Para iniciar a conversão, basta que o software escreva o valor lógico 1 no bit do registrador especificado. Esse bit terá seu valor 1 mantido pelo hardware enquanto a conversão está em progresso, e será zerado no momento que a conversão tiver fim e o resultado estiver disponível. Caso o hardware seja configurado para habilitar interrupção, a ISR será chamada no fim da conversão. O software pode então ler o registrador que guarda o valor final da conversão e a operação terá terminado.
+\par Para efetuar uma conversão, o multiplexador, cujo valor é controlado por um registrador modificável pelo desenvolvedor, deve receber o valor do pino para qual a leitura será feita. Do mesmo modo, os outros valores de configuração devem ser atribuídos de acordo com a configuração desejada. Para iniciar a conversão, basta que o software escreva o valor lógico 1 no bit do registrador especificado. Esse bit terá seu valor 1 mantido pelo hardware enquanto a conversão está em progresso, e será zerado no momento que a conversão tiver fim e o resultado estiver disponível. Caso o hardware seja configurado para habilitar interrupção, a ISR será chamada no fim da conversão. O software pode então ler o registrador que guarda o valor final da conversão e a operação terá terminado.
 \par A implementação atual de uma função bloqueante de leitura analógica, presente na biblioteca de funções disponibilizada pela Arduino, possui como único argumento o pino para qual a conversão deve ser feita, devolvendo o resultado da mesma. Sua implementação pode ser vista abaixo.
 \begin{lstlisting}[style=CStyle,label=analogblock,caption=Leitura analógica bloqueante]
 int analogRead(uint8_t pin) {
@@ -697,7 +688,7 @@ end
     \caption{Transação de dados SPI com SS}
     \label{figspimultiple}
 \end{figure}
-\par O AtMega328p possuiu hardware dedicado a SPI. O módulo consiste em múltiplos registradores de configurações e um registrador de 8 bits para dados. O hardware é responsável por transmitir o registrador de dados bit a bit pelo canal MOSI e preencher o registrador com os 8 bits recebidos pelo MISO. O hardware também controla o clock, e permitindo que o microcontrolador se preocupe somente com escrever e ler dos registradores, sem se preocupar com a lógica da transmissão. Devido à limitação do tamanho do registrador, somente um byte pode ser transmitido por vez, sendo necessário leituras e escritas ao registrador entre transmissões.
+\par O ATMega328p possuiu hardware dedicado a SPI. O módulo consiste em múltiplos registradores de configurações e um registrador de 8 bits para dados. O hardware é responsável por transmitir o registrador de dados bit a bit pelo canal MOSI e preencher o registrador com os 8 bits recebidos pelo MISO. O hardware também controla o clock, e permitindo que o microcontrolador se preocupe somente com escrever e ler dos registradores, sem se preocupar com a lógica da transmissão. Devido à limitação do tamanho do registrador, somente um byte pode ser transmitido por vez, sendo necessário leituras e escritas ao registrador entre transmissões.
 \par A biblioteca SPI disponibilizada pela Arduino utiliza os conceitos de transferência e transação. Enquanto uma transferência é o envio (ou recebimento) de um ou uma série de bytes, uma transação define os parâmetros da comunicação e garante o acesso exclusivo ao módulo SPI. Abaixo o Exemplo \ref{spi-c} demonstra uma aplicação simples onde, ao apertar um botão, a aplicação trasmite por SPI o estado de um LED que está piscando.
 \begin{lstlisting}[style=CStyle,label=spi-c,caption=Aplicação em C utilizando driver SPI bloqueante]
 #include <SPI.h>
@@ -927,7 +918,7 @@ end
 \end{lstlisting}
 \section{Aplicação}
 \subsection{Proposta}
-\tab Como estudo de caso desenvolvemos uma aplicação em sistemas embarcados que utiliza os drivers desenvolvidos. O objetivo é demonstrar o uso dos drivers em uma aplicação de sistemas embarcados com aplicações práticas. Uma aplicação distribuída foi escolhida, por tirar proveito da eficiência promovida por Céu e os drivers desenvolvemos. Inspirado na Internet das Coisas, escolhemos um sistema de iluminação inteligente como alvo do desenvolvimento.
+\tab Como estudo de caso, desenvolvemos uma aplicação em sistemas embarcados que utiliza os drivers desenvolvidos. O objetivo é demonstrar o uso dos drivers em uma aplicação de sistemas embarcados com aplicações práticas. Uma aplicação distribuída foi escolhida, por tirar proveito da eficiência promovida por Céu e os drivers desenvolvemos. Inspirado na Internet das Coisas, escolhemos um sistema de iluminação inteligente como alvo do desenvolvimento.
 \par O objetivo do sistema é reduzir a iluminação desnecessária em ambientes. A proposta é que a iluminação a potência máxima somente ocorra nas seções onde indivíduos estão localizados. As outras seções, neste caso, devem iluminar a uma potência menor de forma a economizar recursos, que seriam gastos caso o ambiente estivesse inteiro iluminado a máxima potência. Caso não existam indivíduos no local, todas as luzes devem estar desligadas.
 \par O sistema consiste em múltiplos nós, unidades individuais rodando uma instância da mesma aplicação. A proposta é que cada nó é responsável por uma seção do ambiente, e que possa se interagir com todos os outros nós utilizando comunicação sem fio.
 \par O comportamento do nó é ditado por dois fatores externos: o sensor de presença e o rádio. Caso o sensor esteja apontando presença, o nó deve ligar sua iluminação, aqui representada por um LED, em sua potência máxima. Além disso, deve usar seu rádio para transmitir uma mensagem a todos os nós, periodicamente, informando da presença. Caso o sensor não aponte ou deixe de apontar presença, o nó desliga seu LED e passa a aguardar mensagens dos outros nós. Caso o nó receba uma mensagem, liga seu LED a meia potência, continuando a escutar por mensagens subsequentes. Se não receber mensagens em um intervalo de tempo, volta ao estado do LED desligado. Na situação em que o sensor aponta presença enquanto o nó está no estado de meia potência, deve ligar o LED na potência máxima e passar a enviar as mensagens, no mesmo comportamento já descrito. O diagrama de estado do comportamento descrito pode ser visto na Figura \ref{state-diagram}.
